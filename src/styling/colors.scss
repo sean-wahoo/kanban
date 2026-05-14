@@ -1,0 +1,31 @@
+@use "sass:color";
+
+$light: #e4e2d9;
+$dark: #0e1011;
+$green: #169873;
+$red: #df2935;
+$blue: #3a7ca5;
+$purple: #816e94;
+
+$fg: $light;
+$bg: $dark;
+
+$calc_unit: 2%;
+
+@function shades($color, $dir, $level: 1) {
+  @if $dir ==lighten {
+    @return color.adjust($color, $lightness: calc($calc_unit * $level));
+  }
+
+  @if $dir ==darken {
+    @return color.adjust($color, $lightness: calc($calc_unit * $level * -1));
+  }
+}
+
+$random: (
+  "1": $red,
+  "2": #ed7f27,
+  "3": #7c9243,
+  "4": #0c7c59,
+  "5": #33658a,
+);

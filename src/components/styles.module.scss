@@ -1,0 +1,191 @@
+@use "@/styling/vars.scss" as v;
+@use "@/styling/colors.scss" as c;
+
+ul.dropdown {
+  flex-flow: column nowrap;
+  margin: 0.5rem;
+
+  background-color: c.$bg;
+  color: c.$fg;
+  border-radius: 8px;
+
+  translate: 0 -6px;
+  opacity: 0;
+  animation: slide-in 0.2s ease forwards;
+
+  >li.option {
+    padding: 0.6rem 0.8rem;
+    cursor: pointer;
+
+    transition: 0.15s;
+
+    &:hover {
+      background-color: c.shades(c.$bg, lighten, 2);
+    }
+  }
+}
+
+@keyframes slide-in {
+  to {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+dialog.dialog {
+  &[open] {
+    position: fixed;
+    inset: 50%;
+    translate: -50% -50%;
+
+    @starting-style {
+      translate: -50% calc(-50% - 24px);
+      opacity: 0;
+    }
+
+    transition: all 0.2s ease;
+  }
+
+  min-width: 200px;
+  min-height: 240px;
+
+  background-color: c.$bg;
+  color: c.$fg;
+  padding: 2rem;
+
+  &:focus,
+  &:focus-visible,
+  &:focus-within,
+  &:active {
+    outline: none;
+  }
+
+  border: 1px solid c.shades(c.$bg, lighten, 12);
+
+  @starting-style {
+    translate: 0 24px;
+    opacity: 0;
+  }
+}
+
+div.select {
+  // position: relative;
+  min-width: 144px;
+}
+
+div.select_preview {
+  display: flex;
+  flex-flow: row wrap;
+
+  background-color: c.shades(c.$bg, lighten, 2);
+  min-height: 1.6rem;
+  font-size: 0.8em;
+
+  padding: 0.2em;
+
+  anchor-name: --select-anchor;
+  justify-content: space-between;
+
+  >span:first-of-type {
+    margin-left: 8px;
+  }
+
+  >button {
+    z-index: 10;
+    margin-inline: 4px 0.4em;
+    // margin-right: 0.4em;
+  }
+}
+
+div.select_options {
+  // translate: 0 -4px;
+  max-height: 300px;
+  background-color: c.shades(c.$bg, lighten, 2);
+  overflow: auto;
+  padding: 0.2em;
+  border-radius: 4px;
+  display: none;
+  opacity: 0;
+  width: max-content;
+
+  // bottom: -0.4em;
+  // bottom: calc(anchor(type) + 20px);
+  // justify-self: anchor(center);
+
+  &.shown {
+    transition:
+      display 0.2s allow-discrete,
+      opacity 0.2s,
+      translate 0.2s;
+    display: block;
+    translate: 0 0;
+    opacity: 1;
+
+    @starting-style {
+      translate: 0 -4px;
+      opacity: 0;
+    }
+  }
+
+  margin-top: 0.6em;
+
+  // position-anchor: --select-anchor;
+  position-area: bottom x-start;
+  // position-try: flip-block;
+
+  transform: translateX(100%);
+  // width: ;
+
+  >span {
+    cursor: pointer;
+    user-select: none;
+    color: c.$fg;
+    font-size: 0.85rem;
+    padding: 0.3em 0.6em;
+    display: block;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid c.shades(c.$bg, lighten, 10);
+    }
+
+    &.active {
+      text-decoration: underline;
+    }
+  }
+}
+
+form.form {
+  display: flex;
+  flex-flow: column nowrap;
+  height: 100%;
+  position: relative;
+
+  >label {
+    font-size: 0.8em;
+  }
+
+  >input,
+  >textarea,
+  >div {
+    background-color: c.shades(c.$bg, lighten, 2);
+    margin-bottom: 0.8rem;
+    padding: 0.1em 0.2em;
+
+    &::-webkit-resizer {
+      display: none;
+    }
+  }
+
+  >button[type="submit"] {
+    background-color: c.$blue;
+    flex-shrink: 1;
+  }
+}
+
+button.button {
+  border-radius: 4px;
+  cursor: pointer;
+  align-self: center;
+  padding: 0.4rem 1rem;
+  width: auto;
+}

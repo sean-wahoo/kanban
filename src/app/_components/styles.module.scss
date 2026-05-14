@@ -1,0 +1,153 @@
+@use "@/styling/colors.scss" as c;
+@use "@/styling/vars.scss" as v;
+
+header.header {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  height: v.$HEADER_HEIGHT;
+  padding-inline: 0.5rem;
+  gap: 0.5rem;
+
+  >button.admin {
+    color: c.$red;
+  }
+}
+
+div.status_columns {
+  display: flex;
+  flex-flow: row nowrap;
+  flex-grow: 1;
+  justify-content: space-evenly;
+  gap: 0.8rem;
+}
+
+div.status_column {
+  display: flex;
+  flex-flow: column nowrap;
+  background-color: c.shades(c.$bg, lighten, 0.5);
+  width: 224px;
+  border-radius: 4px;
+  position: relative;
+
+  >.buttons {
+    position: absolute;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-end;
+    width: 100%;
+    opacity: 0.6;
+
+    >button {
+      margin-inline: 2px;
+      cursor: pointer;
+
+      >svg {
+        width: 20px;
+
+        &:is(.edit > svg) {
+          width: 16px;
+        }
+      }
+    }
+  }
+
+  >header {
+    padding: 0.4rem;
+    font-weight: 500;
+    text-align: center;
+    border-bottom: 1px solid;
+  }
+
+  >main {
+    display: flex;
+    flex-flow: column nowrap;
+    height: 100%;
+    padding: 0.4rem;
+    gap: 0.4rem;
+  }
+}
+
+div.task {
+  background-color: c.shades(c.$bg, lighten, 2.5);
+  padding: 0.4rem;
+
+  border-radius: 0.4px;
+  font-size: 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+
+  transition: box-shadow 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 0 4px 2px c.$bg;
+  }
+
+  >h2 {
+    &:is(div.task:hover > h2) {
+      text-decoration: underline;
+    }
+  }
+
+  >p {
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  >footer {
+    font-size: 0.7rem;
+  }
+
+  // &:dragging {
+  //   opacity: 1;
+  // }
+}
+
+dialog.task_dialog {
+  width: min(636px, 80%);
+
+  &[open] {
+    display: flex;
+    flex-flow: column nowrap;
+  }
+
+  * {
+    font-size: revert;
+  }
+
+  >header {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem;
+  }
+
+  >hr {
+    border: none;
+    padding: 0.4rem;
+    border-top: 1px solid c.shades(c.$bg, lighten, 8);
+  }
+
+  >main {
+    flex-grow: 1;
+  }
+
+  >footer {
+    font-size: 0.8rem;
+  }
+}
+
+div.drag_follower {
+  position: fixed;
+  pointer-events: none;
+  /* Crucial: stops the element from blocking drop zones */
+  z-index: 9999;
+  background-color: #4caf50;
+  /* Opaque green background */
+  color: #ffffff;
+  padding: 12px;
+  border-radius: 4px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  opacity: 1 !important;
+  /* Will remain 100% solid */
+}
