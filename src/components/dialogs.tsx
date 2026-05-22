@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  createProject,
   createStatus,
   createTask,
   signIn,
@@ -17,48 +18,48 @@ import {
   useRef,
   useActionState,
   ComponentProps,
-  createRef,
   RefObject,
   useEffect,
   useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import Dialog, { useDialogs } from "./dialog";
 import Form, { Button } from "./form";
 import Select, { SelectInputHandle, SelectOption } from "./select";
 import styles from "./styles.module.scss";
 import { authClient } from "@/lib/auth-client";
-import { Colors } from "@/lib/utils";
+import { Colors } from "@/lib/utils/shared";
 import { Sketch } from "@uiw/react-color";
 
-interface TaskDialogProps extends Omit<ComponentProps<typeof Dialog>, "ref"> {}
-interface CreateTaskDialogProps extends TaskDialogProps {}
+interface DialogProps extends Omit<ComponentProps<typeof Dialog>, "ref"> {
+  ref?: React.Ref<HTMLDialogElement>;
+}
+interface CreateTaskDialogProps extends DialogProps {}
 export const CreateTaskDialog = ({
   isOpen,
   onClose,
   ...props
 }: CreateTaskDialogProps) => {
   const { data: sessionData } = authClient.useSession();
+  const createTaskDialogRef = useRef<HTMLDialogElement>(null);
+
+  if (sessionData) {
+    createTaskDialogRef.current?.hidePopover();
+  }
+
+  const createTaskFormRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const selectProjectRef = useRef<SelectInputHandle>(null);
-  const createTaskDialogRef = useRef<HTMLDialogElement>(null);
   const selectStatusRef = useRef<SelectInputHandle>(null);
   const tasksQueryKey = trpc.tasks.getTasks.queryKey();
-  const createTaskWithUserId = createTask.bind(
-    null,
-    sessionData?.user.id ?? "",
-  );
-  const [, taskFormAction, taskPending] = useActionState(
-    createTaskWithUserId,
-    null,
-  );
+  const [, taskFormAction, taskPending] = useActionState(createTask, null);
   const { data: projects } = useSuspenseQuery(
     trpc.projects.getProjects.queryOptions(),
   );
   const { data: statuses } = useSuspenseQuery(
     trpc.status.getStatuses.queryOptions(),
   );
-  const createTaskFormRef = useRef<HTMLFormElement>(null);
   return (
     <Dialog
       {...props}
@@ -111,26 +112,30 @@ export const CreateTaskDialog = ({
   );
 };
 
-interface ViewTaskDialogProps extends TaskDialogProps {}
+interface ViewTaskDialogProps extends DialogProps {}
 export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
-  const ref = createRef<HTMLDialogElement>();
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const ref = useRef<HTMLDialogElement>(null);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const taskQueryKey = trpc.tasks.getTask.queryKey();
   const tasksQueryKey = trpc.tasks.getTasks.queryKey();
-  const { activeModal, closeModal, modalData } = useDialogs();
+  const { closeModal, modalData } = useDialogs();
   const taskId = modalData.taskId;
+
+  const { data: sessionData } = authClient.useSession();
+
   const { data: task } = useQuery(
     trpc.tasks.getTask.queryOptions(
       {
         taskId: taskId,
       },
       {
-        enabled: !!taskId && dialogOpen,
+        enabled: !!taskId && isOpen,
         placeholderData: () => {
           const cacheTasks = queryClient.getQueryData(tasksQueryKey);
-          return cacheTasks?.find((t) => t.id === taskId);
+          const found = cacheTasks?.find((t) => t.id === taskId);
+          console.log({ found });
+          if (found) return found;
         },
       },
     ),
@@ -146,7 +151,7 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
   const statusesKey = trpc.status.getStatuses.queryKey();
   const updateTaskStatus = useMutation(
     trpc.tasks.updateTaskStatus.mutationOptions({
-      onMutate: async ({ taskId, newStatusId }) => {
+      onMutate: async ({ newStatusId }) => {
         const prevData = queryClient.getQueryData(taskQueryKey);
         queryClient.setQueryData(taskQueryKey, (old) => ({
           ...old!,
@@ -154,7 +159,7 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
         }));
         return { prevData };
       },
-      onError: async (err, newData, ctx) => {
+      onError: async (_err, _newData, ctx) => {
         queryClient.setQueryData(taskQueryKey, ctx!.prevData);
       },
       onSettled: async () => {
@@ -169,13 +174,13 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
       queryClient.invalidateQueries({ queryKey: statusesKey });
     }
     if (taskId) {
-      ref.current!.showModal();
+      ref.current?.showModal();
     } else {
       ref.current?.requestClose();
     }
 
     return () => ref.current?.close();
-  }, [taskId]);
+  }, [task, taskId]);
 
   useEffect(() => {
     if (task?.statusId) {
@@ -194,21 +199,22 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
       {...props}
       isOpen={isOpen}
       onClose={closeModal!}
-      className={styles.task_dialog}
       ref={ref as RefObject<HTMLDialogElement>}
       id={`task_dialog_${taskId}`}
     >
       <header>
         <h2>{task?.title}</h2>
-        <Select
-          onValueChange={async (newVal, oldVal) => {
-            await updateTaskStatus.mutateAsync({
-              taskId: taskId,
-              newStatusId: newVal[0],
-            });
-          }}
-          options={statusOpts ?? []}
-        />
+        {task?.userId === sessionData?.user.id ? (
+          <Select
+            onValueChange={async (newVal) => {
+              await updateTaskStatus.mutateAsync({
+                taskId: taskId,
+                newStatusId: newVal[0],
+              });
+            }}
+            options={statusOpts ?? []}
+          />
+        ) : null}
       </header>
       <hr />
       <main>
@@ -221,20 +227,20 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
   );
 };
 
-interface CreateStatusProps extends TaskDialogProps {}
+interface CreateStatusProps extends DialogProps {}
 export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
-  const { data: sessionData } = authClient.useSession();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
   const createStatusDialogRef = useRef<HTMLDialogElement>(null);
-  const createStatusWithUserId = createStatus.bind(
-    null,
-    sessionData?.user.id ?? "",
-  );
+  const { data: sessionData } = authClient.useSession();
 
-  const [statusState, statusFormAction, statusPending] = useActionState(
-    createStatusWithUserId,
+  if (sessionData) {
+    createStatusDialogRef.current?.hidePopover();
+  }
+
+  const [, statusFormAction, statusPending] = useActionState(
+    createStatus,
     null,
   );
   const createStatusFormRef = useRef<HTMLFormElement>(null);
@@ -301,7 +307,7 @@ export const UpdateStatusDialog = ({ ...props }: UpdateStatusDialogProps) => {
       },
       {
         enabled: !!statusId,
-        initialData: () => {
+        placeholderData: () => {
           const statuses = queryClient.getQueryData(statusesQueryKey);
           const foundStatus = statuses?.find((s) => s.id === statusId);
           if (foundStatus) {
@@ -380,11 +386,52 @@ export const UpdateStatusDialog = ({ ...props }: UpdateStatusDialogProps) => {
   );
 };
 
-interface LoginDialogProps extends TaskDialogProps {}
+interface CreateProjectDialogProps extends DialogProps {}
+
+export const CreateProjectDialog = ({ ...props }: CreateProjectDialogProps) => {
+  const createProjectDialogRef = useRef<HTMLDialogElement>(null);
+  const [, formAction, pending] = useActionState(createProject, null);
+
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+  const projectsKey = trpc.projects.getProjects.queryKey();
+
+  return (
+    <Dialog {...props} ref={createProjectDialogRef}>
+      <Form
+        action={formAction}
+        onSubmit={() => {
+          queryClient.invalidateQueries({ queryKey: projectsKey });
+          createProjectDialogRef.current?.requestClose();
+        }}
+      >
+        <legend>create project</legend>
+        <label htmlFor="create_project_title">Title</label>
+        <input type="text" id="create_project_title" name="title" />
+        <label htmlFor="create_project_description">description</label>
+        <textarea id="create_project_description" name="description" />
+        <Button type="submit" disabled={pending}>
+          submit
+        </Button>
+      </Form>
+    </Dialog>
+  );
+};
+
+interface LoginDialogProps extends DialogProps {}
 export const LoginDialog = ({ ...props }: LoginDialogProps) => {
-  const [, loginAction, pending] = useActionState(signIn, null);
-  const { data: session } = authClient.useSession();
+  const [loginStatus, loginAction, formPending] = useActionState(signIn, null);
+  const { refetch, data: sessionData } = authClient.useSession();
   const loginDialogRef = useRef<HTMLDialogElement>(null);
+  const router = useRouter();
+  useEffect(() => {
+    if (sessionData) {
+      loginDialogRef.current?.requestClose();
+    } else if (loginStatus?.message === "success") {
+      refetch();
+      router.refresh();
+    }
+  }, [sessionData, loginStatus]);
   return (
     <Dialog {...props} ref={loginDialogRef}>
       <Form action={loginAction}>
@@ -392,7 +439,7 @@ export const LoginDialog = ({ ...props }: LoginDialogProps) => {
         <input id="loginEmail" type="email" name="email" />
         <label htmlFor="loginPassword">Password</label>
         <input id="loginPassword" type="password" name="password" />
-        <Button color="purple" disabled={pending} type="submit">
+        <Button color="purple" disabled={formPending} type="submit">
           Login
         </Button>
       </Form>

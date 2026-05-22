@@ -8,16 +8,12 @@ import {
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
 import { Suspense } from "react";
 import styles from "./styles.module.scss";
-import Task from "./task";
 import { DragDropProvider } from "@dnd-kit/react";
 import Column from "./column";
 
 const Kanban = () => {
   const trpc = useTRPC();
   const { data: tasks } = useSuspenseQuery(trpc.tasks.getTasks.queryOptions());
-  const { data: projects } = useSuspenseQuery(
-    trpc.projects.getProjects.queryOptions(),
-  );
   const { data: statuses } = useSuspenseQuery(
     trpc.status.getStatuses.queryOptions(),
   );
@@ -128,7 +124,7 @@ const Kanban = () => {
           >
             {statuses
               .sort((a, b) => a.order - b.order)
-              .map((status, i) => {
+              .map((status) => {
                 const tasksByStatus = tasks.filter(
                   (t) => t.statusId === status.id,
                 );
@@ -137,21 +133,8 @@ const Kanban = () => {
                     key={status.id}
                     statusId={status.id}
                     index={status.order}
-                  >
-                    <header style={{ borderColor: status?.color! }}>
-                      {status?.name}
-                    </header>
-                    <main>
-                      {tasksByStatus.map((task, i) => (
-                        <Task
-                          task={task}
-                          taskId={task.id}
-                          index={i}
-                          key={task.id}
-                        />
-                      ))}
-                    </main>
-                  </Column>
+                    tasks={tasksByStatus}
+                  />
                 );
               })}
           </DragDropProvider>

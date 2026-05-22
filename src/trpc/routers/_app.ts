@@ -1,6 +1,4 @@
-import { z } from "zod";
-import { authProcedure, baseProcedure, createTRPCRouter } from "../init";
-import { TRPCError } from "@trpc/server";
+import { createTRPCRouter } from "../init";
 import { projectsRouter } from "./projects";
 import { tasksRouter } from "./tasks";
 import { statusRouter } from "./status";

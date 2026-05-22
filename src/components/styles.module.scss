@@ -33,10 +33,13 @@ ul.dropdown {
 }
 
 dialog.dialog {
+  border-radius: 6px;
+
   &[open] {
     position: fixed;
     inset: 50%;
     translate: -50% -50%;
+    box-shadow: 0 4px 48px 4px c.shades(c.$bg, darken, 1);
 
     @starting-style {
       translate: -50% calc(-50% - 24px);
@@ -69,7 +72,6 @@ dialog.dialog {
 }
 
 div.select {
-  // position: relative;
   min-width: 144px;
 }
 
@@ -93,12 +95,10 @@ div.select_preview {
   >button {
     z-index: 10;
     margin-inline: 4px 0.4em;
-    // margin-right: 0.4em;
   }
 }
 
 div.select_options {
-  // translate: 0 -4px;
   max-height: 300px;
   background-color: c.shades(c.$bg, lighten, 2);
   overflow: auto;
@@ -107,10 +107,6 @@ div.select_options {
   display: none;
   opacity: 0;
   width: max-content;
-
-  // bottom: -0.4em;
-  // bottom: calc(anchor(type) + 20px);
-  // justify-self: anchor(center);
 
   &.shown {
     transition:
@@ -129,12 +125,9 @@ div.select_options {
 
   margin-top: 0.6em;
 
-  // position-anchor: --select-anchor;
   position-area: bottom x-start;
-  // position-try: flip-block;
 
   transform: translateX(100%);
-  // width: ;
 
   >span {
     cursor: pointer;
@@ -159,21 +152,28 @@ form.form {
   flex-flow: column nowrap;
   height: 100%;
   position: relative;
+  font-size: 1.2rem;
 
   >label {
     font-size: 0.8em;
+    place-self: flex-start;
   }
 
   >input,
   >textarea,
   >div {
     background-color: c.shades(c.$bg, lighten, 2);
-    margin-bottom: 0.8rem;
-    padding: 0.1em 0.2em;
+    margin-bottom: 10px;
+    padding: 4px 8px;
+    border-radius: 4px;
 
     &::-webkit-resizer {
       display: none;
     }
+  }
+
+  >input {
+    font-size: 0.8em;
   }
 
   >button[type="submit"] {
@@ -188,4 +188,37 @@ button.button {
   align-self: center;
   padding: 0.4rem 1rem;
   width: auto;
+}
+
+dialog.view_task_dialog {
+  width: min(636px, 80%);
+
+  &[open] {
+    display: flex;
+    flex-flow: column nowrap;
+  }
+
+  * {
+    font-size: revert;
+  }
+
+  >header {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.2rem;
+  }
+
+  >hr {
+    border: none;
+    padding: 0.4rem;
+    border-top: 1px solid c.shades(c.$bg, lighten, 8);
+  }
+
+  >main {
+    flex-grow: 1;
+  }
+
+  >footer {
+    font-size: 0.8rem;
+  }
 }

@@ -14,18 +14,35 @@ export const env = createEnv({
     IP_ALLOWLIST: z.string().transform((arg) => arg.split(",")),
   },
   client: {
+    NEXT_PUBLIC_NODE_ENV: z.literal(["development", "production"]),
+    NEXT_PUBLIC_PORT: z
+      .string()
+      .refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
     NEXT_PUBLIC_BASE_URL: z.string(),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
+    NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
+
     BASE_URL: process.env.BASE_URL,
+    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+
+    PORT: process.env.PORT,
+    NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
+
     DATABASE_URL: process.env.DATABASE_URL,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_SECRET,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     ADMIN_EMAIL: process.env.ADMIN_EMAIL,
     ADMIN_PASSWORD: process.env.ADMIN_PASSWORD,
-    PORT: process.env.PORT,
     IP_ALLOWLIST: process.env.IP_ALLOWLIST,
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
   },
 });
+
+/**
+ *
+ * @typedef {typeof env} EnvType
+ *
+ * @typedef {keyof EnvType} EnvName
+ *
+ * */

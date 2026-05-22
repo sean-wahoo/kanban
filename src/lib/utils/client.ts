@@ -1,12 +1,5 @@
-import { env } from "@/env.mjs";
 import { getIPAuth } from "@/lib/utils/server";
 import { useEffect, useState } from "react";
-
-export const getBaseURL = () => {
-  let url = env.NEXT_PUBLIC_BASE_URL ?? "http://localhost" + `:${env.PORT}`;
-  return url;
-};
-
 export const c = (...args: (string | null | undefined)[]) => {
   return Array.from(args.filter((a) => !!a)).join(" ");
 };
@@ -38,13 +31,3 @@ export const useIPAuth = () => {
   }, []);
   return ipValid;
 };
-
-export enum Colors {
-  white = "#e4e2d9",
-  black = "#0e1011",
-  green = "#169873",
-  red = "#df2935",
-  blue = "#3a7ca5",
-  purple = "#816e94",
-  orange = "#ed7f27",
-}

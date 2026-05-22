@@ -1,5 +1,6 @@
 @use "@/styling/colors.scss" as c;
 @use "@/styling/vars.scss" as v;
+@use "@/styling/responsive.scss" as r;
 
 header.header {
   display: flex;
@@ -10,28 +11,63 @@ header.header {
   padding-inline: 0.5rem;
   gap: 0.5rem;
 
-  >button.admin {
+  > nav.header_nav {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 0.8rem;
+
+    > button:has(> svg) {
+      display: contents;
+    }
+
+    @include r.responsive("mobile") {
+      display: none;
+    }
+  }
+
+  > button.admin {
+    justify-self: flex-end;
     color: c.$red;
+
+    &:is(:not(nav.header_nav + button.admin)) {
+      margin-left: auto;
+    }
   }
 }
+
+$col_spacing: 0.8rem;
 
 div.status_columns {
   display: flex;
   flex-flow: row nowrap;
-  flex-grow: 1;
-  justify-content: space-evenly;
-  gap: 0.8rem;
+  flex: 1 0 100%;
+  padding-right: $col_spacing;
+
+  &::after {
+    content: "";
+    flex: 0 0 $col_spacing;
+  }
+
+  height: 100%;
+  margin-inline: auto;
+  place-self: center;
 }
+
+$status_color: var(--status-color, c.$blue);
 
 div.status_column {
   display: flex;
   flex-flow: column nowrap;
   background-color: c.shades(c.$bg, lighten, 0.5);
-  width: 224px;
+  min-width: 224px;
   border-radius: 4px;
   position: relative;
+  min-height: 512px;
 
-  >.buttons {
+  margin: $col_spacing;
+  margin-right: 0;
+
+  > .buttons {
     position: absolute;
     display: flex;
     flex-flow: row nowrap;
@@ -39,11 +75,11 @@ div.status_column {
     width: 100%;
     opacity: 0.6;
 
-    >button {
+    > button {
       margin-inline: 2px;
       cursor: pointer;
 
-      >svg {
+      > svg {
         width: 20px;
 
         &:is(.edit > svg) {
@@ -53,14 +89,23 @@ div.status_column {
     }
   }
 
-  >header {
+  overflow: hidden;
+
+  > header {
     padding: 0.4rem;
     font-weight: 500;
     text-align: center;
     border-bottom: 1px solid;
+    cursor: pointer;
+
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 -4px 12px 2px $status_color;
+    }
   }
 
-  >main {
+  > main {
     display: flex;
     flex-flow: column nowrap;
     height: 100%;
@@ -69,85 +114,50 @@ div.status_column {
   }
 }
 
+$task_bg: c.shades(c.$bg, lighten, 2.5);
+
 div.task {
-  background-color: c.shades(c.$bg, lighten, 2.5);
+  background-color: $task_bg;
   padding: 0.4rem;
 
-  border-radius: 0.4px;
   font-size: 1rem;
   cursor: pointer;
   border-radius: 4px;
 
-  transition: box-shadow 0.2s ease;
+  outline: 1px solid;
+  outline-color: transparent;
 
-  &:hover {
-    box-shadow: 0 0 4px 2px c.$bg;
+  &:hover,
+  &.view_open {
+    outline-color: c.shades(c.$bg, lighten, 8);
   }
 
-  >h2 {
+  transition:
+    box-shadow 0.3s ease,
+    translate 0.3s ease,
+    outline 0.2s ease;
+
+  > h2 {
     &:is(div.task:hover > h2) {
       text-decoration: underline;
     }
   }
 
-  >p {
+  > p {
     font-size: 0.8rem;
     opacity: 0.7;
   }
 
-  >footer {
+  > p.date {
+    opacity: 1;
     font-size: 0.7rem;
   }
-
-  // &:dragging {
-  //   opacity: 1;
-  // }
 }
 
-dialog.task_dialog {
-  width: min(636px, 80%);
+footer.footer {
+  display: flex;
+  place-content: center;
+  padding: 0.6rem;
 
-  &[open] {
-    display: flex;
-    flex-flow: column nowrap;
-  }
-
-  * {
-    font-size: revert;
-  }
-
-  >header {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.2rem;
-  }
-
-  >hr {
-    border: none;
-    padding: 0.4rem;
-    border-top: 1px solid c.shades(c.$bg, lighten, 8);
-  }
-
-  >main {
-    flex-grow: 1;
-  }
-
-  >footer {
-    font-size: 0.8rem;
-  }
-}
-
-div.drag_follower {
-  position: fixed;
-  pointer-events: none;
-  /* Crucial: stops the element from blocking drop zones */
-  z-index: 9999;
-  background-color: #4caf50;
-  /* Opaque green background */
-  color: #ffffff;
-  padding: 12px;
-  border-radius: 4px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  opacity: 1 !important;
-  /* Will remain 100% solid */
+  font-family: var(--font-vt-mono);
 }

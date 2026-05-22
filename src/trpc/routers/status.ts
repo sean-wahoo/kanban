@@ -15,6 +15,9 @@ export const statusRouter = createTRPCRouter({
           where: {
             id: input.statusId,
           },
+          include: {
+            tasks: true,
+          },
         });
         return status;
       } catch (e) {

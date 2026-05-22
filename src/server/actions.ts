@@ -2,13 +2,10 @@
 
 import { auth } from "@/lib/auth";
 import { z } from "zod";
-import { serverActionProcedure } from "./trpc";
-import { TRPCError } from "@trpc/server";
 import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
 import { zfd } from "zod-form-data";
-import { env } from "@/env.mjs";
 import { assertAuth, getIPAuth } from "@/lib/utils/server";
+import { getBaseURL } from "better-auth";
 
 const CreateStatusSchema = zfd.formData({
   name: zfd.text(z.string()),
@@ -27,13 +24,9 @@ const CreateTaskSchema = zfd.formData({
   projectId: zfd.text(z.optional(z.string())),
 });
 
-export async function createStatus(
-  userId: string,
-  _prevData: any,
-  formData: FormData,
-) {
+export async function createStatus(_prevData: any, formData: FormData) {
   try {
-    await assertAuth(userId);
+    const { user } = await assertAuth();
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -53,6 +46,7 @@ export async function createStatus(
       data: {
         name: data.name,
         color: data.color,
+        userId: user.id,
       },
     });
 
@@ -71,7 +65,7 @@ export async function updateStatus(
   formData: FormData,
 ) {
   try {
-    const { session, user } = await assertAuth();
+    const { user } = await assertAuth();
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -90,6 +84,7 @@ export async function updateStatus(
     const newStatus = await prisma.status.update({
       where: {
         id: statusId,
+        userId: user.id,
       },
       data: {
         name: data.name,
@@ -103,13 +98,9 @@ export async function updateStatus(
     return { message: "error", error: e };
   }
 }
-export async function createTask(
-  userId: string,
-  _prevData: any,
-  formData: FormData,
-) {
+export async function createTask(_prevData: any, formData: FormData) {
   try {
-    await assertAuth(userId);
+    const { user } = await assertAuth();
 
     const rawData = Object.fromEntries(formData.entries());
 
@@ -131,6 +122,7 @@ export async function createTask(
         description: data.description,
         projectId: data.projectId,
         statusId: data.statusId,
+        userId: user.id,
       },
     });
 
@@ -141,6 +133,34 @@ export async function createTask(
     console.error(e);
     return { message: "error", error: e };
   }
+}
+
+const ProjectSchema = zfd.formData({
+  title: zfd.text(z.string()),
+  description: zfd.text(z.string()),
+});
+export async function createProject(_prevData: any, formData: FormData) {
+  const { user } = await assertAuth();
+
+  const rawData = Object.fromEntries(formData.entries());
+
+  const { data, success, error } = await ProjectSchema.safeParseAsync(rawData);
+  if (!success) {
+    return {
+      message: "zod error",
+      error: z.flattenError(error),
+    };
+  }
+
+  const newProject = await prisma.project.create({
+    data: {
+      title: data.title,
+      description: data.description,
+      userId: user.id,
+    },
+  });
+
+  return { message: success, projectId: newProject.id };
 }
 
 const LoginSchema = zfd.formData({
@@ -167,12 +187,14 @@ export async function signIn(_prevData: any, formData: FormData) {
       };
     }
 
-    const { token, user } = await auth.api.signInEmail({
+    console.log({ data });
+
+    await auth.api.signInEmail({
       body: {
         email: data.email,
         password: data.password,
         rememberMe: true,
-        // callbackURL
+        callbackURL: getBaseURL(),
       },
     });
 
@@ -183,7 +205,4 @@ export async function signIn(_prevData: any, formData: FormData) {
     console.error(e);
     return { message: "error", error: e };
   }
-}
-function assertAuthed(arg0: string | undefined) {
-  throw new Error("Function not implemented.");
 }

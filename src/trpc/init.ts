@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
 import superjson from "superjson";
-import type { AppRouter } from "@/trpc/routers/_app";
 export const createTRPCContext = async (opts: { headers: Headers }) => {
   const headersObj = await headers();
   const ip = headersObj.get("x-forwarded-for")?.split(",")[0] ?? "unknown";

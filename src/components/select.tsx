@@ -15,7 +15,7 @@ import {
 } from "react";
 import styles from "./styles.module.scss";
 import { ChevronDownIcon } from "lucide-react";
-import { c, clickInRect } from "@/lib/utils";
+import { c, clickInRect } from "@/lib/utils/client";
 import { ErrorBoundary } from "react-error-boundary";
 
 export interface SelectOption {
@@ -156,7 +156,7 @@ const Select = ({
           >
             {options.map((opt, i) => (
               <span
-                key={`${selectId}-${opt.value}`}
+                key={`${selectId}-${opt.value}-${i}`}
                 data-value={opt.value}
                 onClick={handleOptionSelect}
                 className={c(

@@ -2,7 +2,8 @@
 import NextForm from "next/form";
 import styles from "./styles.module.scss";
 import { ComponentProps } from "react";
-import { c, Colors } from "@/lib/utils";
+import { c } from "@/lib/utils/client";
+import { Colors } from "@/lib/utils/shared";
 
 interface FormProps extends ComponentProps<typeof NextForm> {}
 const Form = ({ children, className, ...props }: FormProps) => {

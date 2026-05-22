@@ -10,12 +10,13 @@ import {
   ReactNode,
   useState,
   useContext,
-  createRef,
+  useRef,
 } from "react";
 import styles from "./styles.module.scss";
-import { c } from "@/lib/utils";
+import { c } from "@/lib/utils/client";
 import { createPortal } from "react-dom";
 import {
+  CreateProjectDialog,
   CreateStatusDialog,
   CreateTaskDialog,
   LoginDialog,
@@ -37,13 +38,14 @@ const Dialog = ({
   children,
   className,
   onCancel,
-  ref: dialogRef = createRef<HTMLDialogElement>(),
+  ref: dialogRef,
   isOpen = true,
-  onClose = (e) => {},
+  onClose = () => {},
   ...props
 }: DialogProps) => {
   const dialogId = id ?? useId();
-  // const dialogRef = useRef<HTMLDialogElement>(ref.current);
+  const preRef = useRef<HTMLDialogElement>(null);
+  if (!dialogRef) dialogRef = preRef;
 
   useEffect(() => {
     if (!dialogRef?.current) {
@@ -62,7 +64,6 @@ const Dialog = ({
   }, []);
   useEffect(() => {
     const handleCancel: typeof onClose = (e) => {
-      // e.preventDefault();
       if (isOpen) {
         onClose?.(e);
       }
@@ -87,7 +88,6 @@ const Dialog = ({
       ref={dialogRef}
       id={dialogId}
       className={c(styles.dialog, className)}
-      // onClose={(e) => handleCancel?.(e)}
     >
       {children}
     </dialog>,
@@ -101,6 +101,8 @@ type ModalType =
   | "VIEW_TASK"
   | "CREATE_STATUS"
   | "EDIT_STATUS"
+  | "CREATE_PROJECT"
+  | "EDIT_PROJECT"
   | "LOGIN"
   | null;
 
@@ -158,6 +160,7 @@ export const DialogManager = () => {
       />
       <ViewTaskDialog
         onClose={closeModal!}
+        className={styles.view_task_dialog}
         isOpen={activeModal === "VIEW_TASK"}
       />
       <CreateStatusDialog
@@ -167,6 +170,10 @@ export const DialogManager = () => {
       <UpdateStatusDialog
         onClose={closeModal!}
         isOpen={activeModal === "EDIT_STATUS"}
+      />
+      <CreateProjectDialog
+        onClose={closeModal!}
+        isOpen={activeModal === "CREATE_PROJECT"}
       />
       <LoginDialog onClose={closeModal!} isOpen={activeModal === "LOGIN"} />
     </>

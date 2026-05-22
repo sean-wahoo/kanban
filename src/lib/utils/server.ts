@@ -15,15 +15,11 @@ export async function getIPAuth() {
   return true;
 }
 
-export async function assertAuth(userId?: string) {
+export async function assertAuth() {
   const headersObj = await headers();
-  // if (!(await assertIPAuth(headersObj))) {
-  //   throw new Error("Unauthorized");
-  // }
   const session = await auth.api.getSession({
     headers: headersObj,
   });
   if (!session) throw new Error("Unauthorized");
-  // if (userId !== session.user.id) throw new Error("Unauthorized");
   return session;
 }

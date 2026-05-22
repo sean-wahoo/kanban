@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, VT323 } from "next/font/google";
 import "./globals.scss";
 import { TRPCReactProvider } from "@/trpc/client";
 import Header from "./_components/header";
 import Footer from "./_components/footer";
 import { prefetch, trpc } from "@/trpc/server";
-import TaskDialog from "./_components/task_dialog";
 import { DialogManager, DialogProvider } from "@/components/dialog";
 
 const geistSans = Geist({
@@ -16,6 +15,11 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const vt323Mono = VT323({
+  variable: "--font-vt-mono",
+  weight: "400",
 });
 
 export const metadata: Metadata = {
@@ -33,13 +37,12 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body>
         <TRPCReactProvider>
           <DialogProvider>
             <Header />
-            {/* <TaskDialog /> */}
             {children}
             <Footer />
             <div id="dialog_root"></div>

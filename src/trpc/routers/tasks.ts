@@ -16,9 +16,6 @@ export const tasksRouter = createTRPCRouter({
           where: {
             id: input.taskId,
           },
-          include: {
-            status: true,
-          },
         });
         if (!task) {
           throw new TRPCError({
@@ -35,14 +32,9 @@ export const tasksRouter = createTRPCRouter({
     }),
   getTasks: baseProcedure
     .input(z.optional(z.object({ statusIds: z.optional(z.array(z.string())) })))
-    // .input(z.optional(z.infer<Prisma.TaskWhereInput>))
     .query(async ({ ctx, input }) => {
       try {
-        const queryOpts: Prisma.TaskFindManyArgs = {
-          // include: {
-          //   status: true,
-          // },
-        };
+        const queryOpts: Prisma.TaskFindManyArgs = {};
         if (input?.statusIds) {
           queryOpts.where = {
             ...queryOpts.where,

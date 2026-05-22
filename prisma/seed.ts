@@ -1,7 +1,7 @@
 import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { Colors } from "@/lib/utils";
+import { Colors } from "@/lib/utils/shared";
 
 interface DefaultStatusType {
   name: string;
