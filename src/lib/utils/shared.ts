@@ -1,16 +1,19 @@
 import { env } from "@/env.mjs";
 
 export const getBaseURL = () => {
-  const isServer = typeof window === "undefined";
-  if (isServer) {
-    return env.NODE_ENV === "production"
-      ? env.BASE_URL
-      : `http://localhost:${env.PORT}`;
-  } else {
-    return env.NEXT_PUBLIC_NODE_ENV === "production"
-      ? env.NEXT_PUBLIC_BASE_URL
-      : `http://localhost:${env.NEXT_PUBLIC_PORT}`;
-  }
+  return env.NODE_ENV === "production"
+    ? (env.BASE_URL ?? env.VERCEL_URL)
+    : `http://localhost:${env.PORT}`;
+  // const isServer = typeof window === "undefined";
+  // if (isServer) {
+  //   return env.NODE_ENV === "production"
+  //     ? (env.BASE_URL ?? env.VERCEL_URL)
+  //     : `http://localhost:${env.PORT}`;
+  // } else {
+  //   return env.NODE_ENV !== "production"
+  //     ? (env.NEXT_PUBLIC_BASE_URL ?? env.NEXT_PUBLIC_VERCEL_URL)
+  //     : `http://localhost:${env.NEXT_PUBLIC_PORT}`;
+  // }
 };
 
 export enum Colors {

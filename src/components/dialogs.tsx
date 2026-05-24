@@ -305,7 +305,7 @@ export const UpdateStatusDialog = ({ ...props }: UpdateStatusDialogProps) => {
           const statuses = queryClient.getQueryData(statusesQueryKey);
           const foundStatus = statuses?.find((s) => s.id === statusId);
           if (foundStatus) {
-            return foundStatus;
+            return { ...foundStatus, tasks: [] };
           }
         },
       },

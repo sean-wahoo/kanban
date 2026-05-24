@@ -3,32 +3,39 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    NODE_ENV: z.literal(["development", "production"]),
-    BASE_URL: z.string(),
     DATABASE_URL: z.string(),
     BETTER_AUTH_URL: z.string().min(32),
     BETTER_AUTH_SECRET: z.string().min(32),
     ADMIN_EMAIL: z.string(),
     ADMIN_PASSWORD: z.string(),
-    PORT: z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
     IP_ALLOWLIST: z.string().transform((arg) => arg.split(",")),
+    VERCEL_URL: z.optional(z.string()),
   },
-  client: {
-    NEXT_PUBLIC_NODE_ENV: z.literal(["development", "production"]),
-    NEXT_PUBLIC_PORT: z
-      .string()
-      .refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
-    NEXT_PUBLIC_BASE_URL: z.string(),
+  // client: {
+  //   NEXT_PUBLIC_NODE_ENV: z.literal(["development", "production"]),
+  //   NEXT_PUBLIC_PORT: z
+  //     .string()
+  //     .refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
+  //   NEXT_PUBLIC_BASE_URL: z.optional(z.string()),
+  //   NEXT_PUBLIC_VERCEL_URL: z.optional(z.string()),
+  // },
+  shared: {
+    NODE_ENV: z.literal(["development", "production"]),
+    BASE_URL: z.optional(z.string()),
+    PORT: z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
   },
   runtimeEnv: {
     NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
+    // NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
 
     BASE_URL: process.env.BASE_URL,
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
+    // NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
 
-    PORT: process.env.PORT,
-    NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
+    PORT: process.env.PORT ?? process.env.NEXT_PUBLIC_PORT,
+    // NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
+
+    VERCEL_URL: process.env.VERCEL_URL,
+    // NEXT_PUBLIC_VERCEL_URL: process.env.VERCEL_URL,
 
     DATABASE_URL: process.env.DATABASE_URL,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_SECRET,

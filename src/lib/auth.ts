@@ -4,7 +4,9 @@ import { twoFactor, username } from "better-auth/plugins";
 import { prisma } from "./prisma";
 import { nextCookies } from "better-auth/next-js";
 import { env } from "@/env.mjs";
+import { getBaseURL } from "./utils/shared";
 
+process.env.BETTER_AUTH_URL = getBaseURL();
 export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
@@ -13,5 +15,5 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
-  trustedOrigins: [env.BASE_URL, `http://localhost:${env.PORT}`],
+  trustedOrigins: [`${env.BASE_URL}`, `http://localhost:${env.PORT}`],
 });
