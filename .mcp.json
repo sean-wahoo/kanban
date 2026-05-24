@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "next-devtools": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "next-devtools-mcp@latest"
+      ],
+      "env": {
+        "NEXTJS_DEFAULT_PORT": "3010"
+      },
+      "transport": "streamable_http",
+      "headers": {
+        "Content-Type": "application/json",
+        "Accept": "application/json, text/event-stream"
+      }
+    }
+  }
+}
