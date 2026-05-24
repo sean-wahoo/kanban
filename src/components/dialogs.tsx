@@ -134,7 +134,6 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
         placeholderData: () => {
           const cacheTasks = queryClient.getQueryData(tasksQueryKey);
           const found = cacheTasks?.find((t) => t.id === taskId);
-          console.log({ found });
           if (found) return found;
         },
       },
@@ -172,18 +171,6 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
   useEffect(() => {
     if (task?.statusId) {
       queryClient.invalidateQueries({ queryKey: statusesKey });
-    }
-    if (taskId) {
-      ref.current?.showModal();
-    } else {
-      ref.current?.requestClose();
-    }
-
-    return () => ref.current?.close();
-  }, [task, taskId]);
-
-  useEffect(() => {
-    if (task?.statusId) {
       setStatusOpts(
         statuses?.map((status) => ({
           label: status.name,
@@ -192,7 +179,14 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
         })) ?? [],
       );
     }
-  }, [task?.statusId]);
+    if (taskId) {
+      ref.current?.showModal();
+    } else {
+      ref.current?.requestClose();
+    }
+
+    return () => ref.current?.close();
+  }, [task?.statusId, taskId]);
 
   return (
     <Dialog

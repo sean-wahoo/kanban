@@ -45,7 +45,7 @@ const StatusColumn = ({
         placeholderData: () => {
           const cachedStatuses = queryClient.getQueryData(statusesKey);
           const found = cachedStatuses?.find((c) => c.id === statusId);
-          if (found) return found;
+          if (found) return { ...found, tasks: [] };
         },
       },
     ),
