@@ -18,5 +18,9 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "sqlite",
   }),
-  trustedOrigins: [`${getBaseURL()}`, `http://localhost:${env.PORT}`],
+  trustedOrigins: [
+    `${getBaseURL()}`,
+    `http://localhost:${env.PORT}`,
+    "*.vercel.app",
+  ],
 });
