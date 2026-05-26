@@ -7,9 +7,10 @@ interface DefaultStatusType {
   id: string;
   name: string;
   color: string;
+  default?: boolean;
 }
 const DEFAULT_STATUSES: DefaultStatusType[] = [
-  { id: "DEFAULT_BACKLOG", name: "backlog", color: Colors.blue },
+  { id: "DEFAULT_BACKLOG", name: "backlog", default: true, color: Colors.blue },
   { id: "DEFAULT_IN_PROGRESS", name: "in_progress", color: Colors.orange },
   { id: "DEFAULT_FINISHED", name: "finished", color: Colors.green },
 ];

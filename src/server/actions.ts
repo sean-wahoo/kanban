@@ -114,6 +114,22 @@ export async function createTask(_prevData: any, formData: FormData) {
       };
     }
 
+    if (!data.statusId) {
+      const defaultStatus = await prisma.status.findFirst({
+        where: {
+          default: true,
+          userId: user.id,
+        },
+      });
+      if (!defaultStatus) {
+        return {
+          message: "error",
+          error: new Error("no default status found"),
+        };
+      }
+      data.statusId = defaultStatus.id;
+    }
+
     const newTask = await prisma.task.create({
       data: {
         title: data.title,
