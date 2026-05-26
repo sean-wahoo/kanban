@@ -6,6 +6,7 @@ import {
   createTask,
   signIn,
   updateStatus,
+  updateTask,
 } from "@/server/actions";
 import { useTRPC } from "@/trpc/client";
 import {
@@ -30,6 +31,8 @@ import styles from "./styles.module.scss";
 import { authClient } from "@/lib/auth-client";
 import { Colors } from "@/lib/utils/shared";
 import { Sketch } from "@uiw/react-color";
+import { PencilIcon, TrashIcon } from "lucide-react";
+import { useMounted } from "@/lib/hooks";
 
 interface DialogProps extends Omit<ComponentProps<typeof Dialog>, "ref"> {
   ref?: React.Ref<HTMLDialogElement>;
@@ -89,9 +92,10 @@ export const CreateTaskDialog = ({
           id="create-task-project"
           name="projectId"
           ref={selectProjectRef}
-          options={projects.map((proj) => ({
+          options={projects.map((proj, index) => ({
             label: proj.title,
             value: proj.id,
+            default: index === 0,
           }))}
         />
         <label htmlFor="create-task-status">Status</label>
@@ -99,9 +103,10 @@ export const CreateTaskDialog = ({
           id="create-task-status"
           name="statusId"
           ref={selectStatusRef}
-          options={statuses.map((status) => ({
+          options={statuses.map((status, index) => ({
             label: status.name,
             value: status.id,
+            default: status.default ?? index === 0,
           }))}
         />
         <Button disabled={taskPending} type="submit">
@@ -119,7 +124,7 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
   const trpc = useTRPC();
   const taskQueryKey = trpc.tasks.getTask.queryKey();
   const tasksQueryKey = trpc.tasks.getTasks.queryKey();
-  const { closeModal, modalData } = useDialogs();
+  const { openModal, closeModal, modalData } = useDialogs();
   const taskId = modalData.taskId;
 
   const { data: sessionData } = authClient.useSession();
@@ -168,14 +173,24 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
     }),
   );
 
+  const deleteStatus = useMutation(
+    trpc.tasks.deleteTask.mutationOptions({
+      onSettled: async () => {
+        await queryClient.invalidateQueries({ queryKey: tasksQueryKey });
+        await queryClient.invalidateQueries({ queryKey: taskQueryKey });
+      },
+    }),
+  );
+
   useEffect(() => {
     if (task?.statusId) {
       queryClient.invalidateQueries({ queryKey: statusesKey });
       setStatusOpts(
-        statuses?.map((status) => ({
+        statuses?.map((status, index) => ({
           label: status.name,
           value: status.id,
-          default: task?.statusId === status.id,
+          default: status.default ?? index === 0,
+          // default: task?.statusId === status.id,
         })) ?? [],
       );
     }
@@ -199,15 +214,34 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
       <header>
         <h2>{task?.title}</h2>
         {task?.userId === sessionData?.user.id ? (
-          <Select
-            onValueChange={async (newVal) => {
-              await updateTaskStatus.mutateAsync({
-                taskId: taskId,
-                newStatusId: newVal[0],
-              });
-            }}
-            options={statusOpts ?? []}
-          />
+          <>
+            <Select
+              onValueChange={async (newVal) => {
+                await updateTaskStatus.mutateAsync({
+                  taskId: taskId,
+                  newStatusId: newVal[0],
+                });
+              }}
+              options={statusOpts ?? []}
+            />
+            <button
+              onClick={() => {
+                openModal("EDIT_TASK", {
+                  taskId: taskId,
+                });
+              }}
+            >
+              <PencilIcon />
+            </button>
+            <button
+              onClick={() => {
+                deleteStatus.mutate({ taskId: taskId });
+                ref.current?.requestClose();
+              }}
+            >
+              <TrashIcon />
+            </button>
+          </>
         ) : null}
       </header>
       <hr />
@@ -221,6 +255,69 @@ export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
   );
 };
 
+interface UpdateTaskDialogProps extends DialogProps {}
+export const UpdateTaskDialog = ({ ...props }: UpdateTaskDialogProps) => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+  const updateTaskDialogRef = useRef<HTMLDialogElement>(null);
+  const { data: sessionData } = authClient.useSession();
+
+  if (!sessionData) {
+    updateTaskDialogRef.current?.hidePopover();
+  }
+  const updateTaskFormRef = useRef<HTMLFormElement>(null);
+
+  const { modalData } = useDialogs();
+  const updateTaskWithTaskId = updateTask.bind(null, modalData.taskId);
+  const [, taskFormAction, taskPending] = useActionState(
+    updateTaskWithTaskId,
+    null,
+  );
+
+  const { data: task } = useQuery(
+    trpc.tasks.getTask.queryOptions(
+      { taskId: modalData.taskId },
+      { enabled: !!modalData.taskId },
+    ),
+  );
+
+  return (
+    <Dialog {...props} ref={updateTaskDialogRef}>
+      <Form
+        ref={updateTaskFormRef}
+        onSubmit={() => {
+          queryClient.invalidateQueries({
+            queryKey: trpc.tasks.getTask.queryKey({
+              taskId: modalData.taskId,
+            }),
+          });
+          queryClient.invalidateQueries({
+            queryKey: trpc.tasks.getTasks.queryKey(),
+          });
+        }}
+        action={taskFormAction}
+      >
+        <label htmlFor="update_task_title">Title</label>
+        <input
+          type="text"
+          name="title"
+          defaultValue={task?.title}
+          id="update_task_title"
+        />
+        <label htmlFor="update_task_description">Description</label>
+        <textarea
+          name="description"
+          defaultValue={task?.description}
+          id="update_task_description"
+        />
+        <button type="submit" disabled={taskPending}>
+          {taskPending ? "Saving..." : "Save"}
+        </button>
+      </Form>
+    </Dialog>
+  );
+};
+
 interface CreateStatusProps extends DialogProps {}
 export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
   const trpc = useTRPC();
@@ -228,6 +325,7 @@ export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
 
   const createStatusDialogRef = useRef<HTMLDialogElement>(null);
   const { data: sessionData } = authClient.useSession();
+  const { modalData } = useDialogs();
 
   if (!sessionData) {
     createStatusDialogRef.current?.hidePopover();
@@ -241,10 +339,8 @@ export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
   const [statusFormColorHex, setStatusFormColorHex] = useState<string>(
     Colors.blue,
   );
-  const [statusFormColorMounted, setStatusFormColorMounted] = useState(false);
-  useEffect(() => {
-    setStatusFormColorMounted(true);
-  }, []);
+
+  const mounted = useMounted();
 
   const statusQueryKey = trpc.status.getStatuses.queryKey();
   return (
@@ -266,7 +362,7 @@ export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
         <label htmlFor="create-status-default">Default</label>
         <input type="checkbox" id="create-status-default" name="default" />
         <label htmlFor="create-status-color">Color</label>
-        {statusFormColorMounted ? (
+        {mounted ? (
           <>
             <Sketch
               color={statusFormColorHex}

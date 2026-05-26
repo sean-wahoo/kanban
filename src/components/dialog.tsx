@@ -21,6 +21,7 @@ import {
   CreateTaskDialog,
   LoginDialog,
   UpdateStatusDialog,
+  UpdateTaskDialog,
   ViewTaskDialog,
 } from "./dialogs";
 
@@ -99,6 +100,7 @@ export default Dialog;
 type ModalType =
   | "CREATE_TASK"
   | "VIEW_TASK"
+  | "EDIT_TASK"
   | "CREATE_STATUS"
   | "EDIT_STATUS"
   | "CREATE_PROJECT"
@@ -174,6 +176,10 @@ export const DialogManager = () => {
       <CreateProjectDialog
         onClose={closeModal!}
         isOpen={activeModal === "CREATE_PROJECT"}
+      />
+      <UpdateTaskDialog
+        onClose={closeModal!}
+        isOpen={activeModal === "EDIT_TASK"}
       />
       <LoginDialog onClose={closeModal!} isOpen={activeModal === "LOGIN"} />
     </>

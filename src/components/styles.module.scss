@@ -204,8 +204,19 @@ dialog.view_task_dialog {
 
   >header {
     display: flex;
-    justify-content: space-between;
+    // justify-content: space-between;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.6rem;
     padding: 0.2rem;
+
+    >h2 {
+      margin-right: auto;
+    }
+
+    >button {
+      cursor: pointer;
+    }
   }
 
   >hr {

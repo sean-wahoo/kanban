@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { zfd } from "zod-form-data";
 import { assertAuth, getIPAuth } from "@/lib/utils/server";
-import { getBaseURL } from "better-auth";
+import { getBaseURL } from "@/lib/utils/shared";
 
 const CreateStatusSchema = zfd.formData({
   name: zfd.text(z.string()),
@@ -137,6 +137,48 @@ export async function createTask(_prevData: any, formData: FormData) {
         projectId: data.projectId,
         statusId: data.statusId,
         userId: user.id,
+      },
+    });
+
+    return { message: "success", taskId: newTask.id };
+  } catch (e) {
+    console.error(e);
+    return { message: "error", error: e };
+  }
+}
+
+export async function updateTask(
+  taskId: string,
+  _prevData: any,
+  formData: FormData,
+) {
+  try {
+    const { user } = await assertAuth();
+
+    const rawData = Object.fromEntries(formData.entries());
+
+    const { data, success, error } =
+      await CreateTaskSchema.safeParseAsync(rawData);
+
+    console.log({ data, success, error });
+
+    if (!success) {
+      return {
+        message: "zod error",
+        error: z.flattenError(error),
+      };
+    }
+
+    const newTask = await prisma.task.update({
+      where: {
+        id: taskId,
+        userId: user.id,
+      },
+      data: {
+        title: data.title,
+        description: data.description,
+        projectId: data.projectId,
+        statusId: data.statusId,
       },
     });
 
