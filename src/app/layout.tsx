@@ -32,12 +32,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
-    >
-      <body>
-        <TRPCReactProvider>
+    <TRPCReactProvider>
+      <html
+        lang="en"
+        className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
+      >
+        <body>
           <DialogProvider>
             <Header />
             {children}
@@ -45,8 +45,8 @@ export default function RootLayout({
             <div id="dialog_root"></div>
             <DialogManager />
           </DialogProvider>
-        </TRPCReactProvider>
-      </body>
-    </html>
+        </body>
+      </html>
+    </TRPCReactProvider>
   );
 }
