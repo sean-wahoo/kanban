@@ -4,7 +4,11 @@ import { toNextJsHandler } from "better-auth/next-js";
 const { POST: authPost, GET: authGet } = toNextJsHandler(auth);
 
 const setCorsHeaders = (res: Response, origin: string | null) => {
-  const allowedOrigins = ["http://localhost:3010", "http://localhost:3005"];
+  const allowedOrigins = [
+    "http://localhost:3010",
+    "http://localhost:3005",
+    "https://seanline.dev",
+  ];
 
   if (
     origin &&

@@ -10,7 +10,6 @@ import { getBaseURL, getRootURL } from "./utils/shared";
 // process.env.BETTER_AUTH_URL = baseUrl?.startsWith("http")
 //   ? baseUrl
 //   : `https://${baseUrl}`;
-const trustedOrigins = [];
 export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
@@ -29,7 +28,7 @@ export const auth = betterAuth({
   advanced: {
     crossSubDomainCookies: {
       enabled: true,
-      domain: env.NODE_ENV === "production" ? getBaseURL() : undefined,
+      domain: env.NODE_ENV === "production" ? getRootURL() : undefined,
     },
     defaultCookieAttributes: {
       sameSite: env.NODE_ENV === "production" ? "lax" : "none",

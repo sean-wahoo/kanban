@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
       destination:
         process.env.NODE_ENV !== "production"
           ? `/kanban/images/:path*`
-          : `https://${process.env.NEXT_PUBLIC_ROOT_URL}/kanban/images/:path*`,
+          : `https://${process.env.NEXT_PUBLIC_ROOT_URL?.endsWith("/") ? process.env.NEXT_PUBLIC_ROOT_URL.slice(0, -1) : process.env.NEXT_PUBLIC_ROOT_URL}/kanban/images/:path*`,
     },
   ],
 };
