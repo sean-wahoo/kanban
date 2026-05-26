@@ -4,7 +4,6 @@ import "./globals.scss";
 import { TRPCReactProvider } from "@/trpc/client";
 import Header from "./_components/header";
 import Footer from "./_components/footer";
-import { prefetch, trpc } from "@/trpc/server";
 import { DialogManager, DialogProvider } from "@/components/dialog";
 
 const geistSans = Geist({
@@ -32,8 +31,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  prefetch(trpc.status.getStatuses.queryOptions());
-
   return (
     <html
       lang="en"

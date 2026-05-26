@@ -26,7 +26,6 @@ const Task = ({ index, task, taskId, className, ...props }: TaskProps) => {
 
   const isUserTask = task.userId === sessionData?.user.id;
 
-  console.log({ task });
   const { ref: draggableRef } = useDraggable({
     id: `draggable_${task.id}`,
     type: "item",

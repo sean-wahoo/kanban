@@ -50,8 +50,6 @@ export async function createStatus(_prevData: any, formData: FormData) {
       },
     });
 
-    console.log({ newStatus });
-
     return { message: "success", statusId: newStatus.id };
   } catch (e) {
     console.error(e);
@@ -126,8 +124,6 @@ export async function createTask(_prevData: any, formData: FormData) {
       },
     });
 
-    console.log({ newTask });
-
     return { message: "success", taskId: newTask.id };
   } catch (e) {
     console.error(e);
@@ -186,8 +182,6 @@ export async function signIn(_prevData: any, formData: FormData) {
         error: z.flattenError(error),
       };
     }
-
-    console.log({ data });
 
     await auth.api.signInEmail({
       body: {
