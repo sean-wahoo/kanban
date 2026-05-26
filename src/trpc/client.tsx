@@ -1,13 +1,19 @@
 "use client";
 import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import {
+  createTRPCClient,
+  httpBatchStreamLink,
+  loggerLink,
+} from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useState } from "react";
 import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "./routers/_app";
 import superjson from "superjson";
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
+import { getBaseURL } from "@/lib/utils/shared";
+import { env } from "@/env.mjs";
 export const { useTRPCClient, TRPCProvider, useTRPC } =
   createTRPCContext<AppRouter>();
 let browserQueryClient: QueryClient;
@@ -24,12 +30,12 @@ function getQueryClient() {
   return browserQueryClient;
 }
 function getUrl() {
-  const base = (() => {
-    if (typeof window !== "undefined") return "";
-    if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-    return "http://localhost:3010";
-  })();
-  return `${base}/api/trpc`;
+  // const base = (() => {
+  //   if (typeof window !== "undefined") return "";
+  //   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  //   return "http://localhost:3010";
+  // })();
+  return `${getBaseURL()}/api/trpc`;
 }
 export function TRPCReactProvider(
   props: Readonly<{
@@ -44,7 +50,27 @@ export function TRPCReactProvider(
   const [trpcClient] = useState(() =>
     createTRPCClient<AppRouter>({
       links: [
-        httpBatchLink({
+        loggerLink({
+          enabled: (opts) =>
+            // Log in development, or if it's a server-side execution error
+            {
+              if (
+                (typeof window === "undefined" &&
+                  env.NODE_ENV === "development") ||
+                (typeof window !== "undefined" &&
+                  window.location.hostname === "localhost") ||
+                (opts.direction === "down" &&
+                  opts.result instanceof Error &&
+                  opts.direction === "down" &&
+                  "error" in opts &&
+                  opts.error instanceof Error)
+              ) {
+                return true;
+              }
+              return false;
+            },
+        }),
+        httpBatchStreamLink({
           transformer: superjson,
           url: getUrl(),
         }),

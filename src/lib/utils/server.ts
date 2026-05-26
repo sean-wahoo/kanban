@@ -4,15 +4,26 @@ import { env } from "@/env.mjs";
 import { auth } from "../auth";
 
 export async function getIPAuth() {
+  if (env.NODE_ENV === "development") {
+    return true;
+  }
+
   const headersObj = await headers();
   const ip =
     headersObj.get("x-real-ip") ??
     headersObj.get("x-forwarded-for")?.split(",")[0];
-  const allowList = env.NODE_ENV === "development" ? ["::1"] : env.IP_ALLOWLIST;
-  if (!ip || !allowList.includes(ip!)) {
+  if (!ip) return false;
+
+  const allowList = env.IP_ALLOWLIST;
+  const localLoopbacks = ["127.0.0.1", "::1", "::ffff:127.0.0.1"];
+
+  const cleanIP = ip.startsWith("::ffff:") ? ip.substring(7) : ip;
+
+  if (localLoopbacks.includes(cleanIP)) {
     return false;
   }
-  return true;
+
+  return allowList.includes(cleanIP);
 }
 
 export async function assertAuth() {
