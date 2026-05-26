@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import { env } from "@/env.mjs";
 import { getBaseURL } from "./utils/shared";
 
+process.env.BETTER_AUTH_URL = `${getBaseURL()}`;
 export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
