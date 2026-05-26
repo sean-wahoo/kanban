@@ -46,6 +46,7 @@ export const tasksRouter = createTRPCRouter({
         const tasks = await ctx.prisma.task.findMany(queryOpts);
         return tasks;
       } catch (e) {
+        console.log(JSON.stringify(e, null, 2));
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
         });
@@ -69,6 +70,24 @@ export const tasksRouter = createTRPCRouter({
           },
           data: {
             statusId: input.newStatusId,
+          },
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }),
+  deleteTask: authProcedure
+    .input(
+      z.object({
+        taskId: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await ctx.prisma.task.delete({
+          where: {
+            id: input.taskId,
+            userId: ctx.sessionData?.user.id,
           },
         });
       } catch (e) {
