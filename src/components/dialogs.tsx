@@ -43,7 +43,7 @@ export const CreateTaskDialog = ({
   const { data: sessionData } = authClient.useSession();
   const createTaskDialogRef = useRef<HTMLDialogElement>(null);
 
-  if (sessionData) {
+  if (!sessionData) {
     createTaskDialogRef.current?.hidePopover();
   }
 
@@ -229,7 +229,7 @@ export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
   const createStatusDialogRef = useRef<HTMLDialogElement>(null);
   const { data: sessionData } = authClient.useSession();
 
-  if (sessionData) {
+  if (!sessionData) {
     createStatusDialogRef.current?.hidePopover();
   }
 
@@ -389,6 +389,12 @@ export const CreateProjectDialog = ({ ...props }: CreateProjectDialogProps) => {
   const queryClient = useQueryClient();
   const trpc = useTRPC();
   const projectsKey = trpc.projects.getProjects.queryKey();
+
+  const { data: sessionData } = authClient.useSession();
+
+  if (!sessionData) {
+    createProjectDialogRef.current?.hidePopover();
+  }
 
   return (
     <Dialog {...props} ref={createProjectDialogRef}>

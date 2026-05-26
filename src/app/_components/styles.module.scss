@@ -16,12 +16,23 @@ header.header {
     flex-flow: row nowrap;
     gap: 0.8rem;
 
-    > button:has(> svg) {
-      display: contents;
+    > button {
+      cursor: pointer;
+
+      &:has(> svg) {
+        display: contents;
+      }
     }
 
     @include r.responsive("mobile") {
       display: none;
+    }
+  }
+
+  > button.mobile_nav_trigger {
+    display: none;
+    @include r.responsive("mobile") {
+      display: initial;
     }
   }
 
