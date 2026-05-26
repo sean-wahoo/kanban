@@ -9,7 +9,8 @@
     "db:push-prod": "prisma migrate deploy && prisma db seed",
     "build": "NODE_OPTIONS='--enable-source-maps' next build",
     "start": "NODE_OPTIONS='--enable-source-maps' next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@dnd-kit/abstract": "^0.4.0",
