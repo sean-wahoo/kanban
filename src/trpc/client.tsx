@@ -12,7 +12,7 @@ import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "./routers/_app";
 import superjson from "superjson";
 import { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
-import { getBaseURL } from "@/lib/utils/shared";
+import { getBaseURL, getRootURL } from "@/lib/utils/shared";
 import { env } from "@/env.mjs";
 export const { useTRPCClient, TRPCProvider, useTRPC } =
   createTRPCContext<AppRouter>();
@@ -35,7 +35,9 @@ function getUrl() {
   //   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   //   return "http://localhost:3010";
   // })();
-  return `${getBaseURL()}/api/trpc`;
+  return env.NEXT_PUBLIC_NODE_ENV === "production"
+    ? `${getBaseURL()}/api/trpc`
+    : `${getRootURL()}/kanban/api/trpc`;
 }
 export function TRPCReactProvider(
   props: Readonly<{

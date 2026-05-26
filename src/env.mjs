@@ -12,8 +12,12 @@ export const env = createEnv({
     ADMIN_PASSWORD: z.string(),
     IP_ALLOWLIST: z.string().transform((arg) => arg.split(",")),
     BASE_URL: z.optional(z.string()),
+    ROOT_URL: z.optional(z.string()),
     NODE_ENV: z.enum(["test", "development", "production"]),
     PORT: z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
+    ROOT_PORT: z.optional(
+      z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
+    ),
     VERCEL_URL: z.optional(z.string()),
   },
   client: {
@@ -23,7 +27,11 @@ export const env = createEnv({
     NEXT_PUBLIC_PORT: z.optional(
       z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
     ),
+    NEXT_PUBLIC_ROOT_PORT: z.optional(
+      z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
+    ),
     NEXT_PUBLIC_BASE_URL: z.optional(z.string()),
+    NEXT_PUBLIC_ROOT_URL: z.optional(z.string()),
     NEXT_PUBLIC_VERCEL_URL: z.optional(z.string()),
   },
   runtimeEnv: {
@@ -36,8 +44,14 @@ export const env = createEnv({
     PORT: process.env.PORT,
     NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
 
+    ROOT_PORT: process.env.ROOT_PORT,
+    NEXT_PUBLIC_ROOT_PORT: process.env.NEXT_PUBLIC_ROOT_PORT,
+
     VERCEL_URL: process.env.VERCEL_URL,
     NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
+
+    ROOT_URL: process.env.ROOT_URL,
+    NEXT_PUBLIC_ROOT_URL: process.env.NEXT_PUBLIC_ROOT_URL,
 
     DATABASE_URL: process.env.DATABASE_URL,
     TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL,
