@@ -34,12 +34,12 @@ export default function RootLayout({
 }>) {
   return (
     <TRPCReactProvider>
-      <Analytics />
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
       >
         <body>
+          <Analytics />
           <DialogProvider>
             <Header />
             {children}
