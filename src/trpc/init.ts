@@ -1,4 +1,3 @@
-import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getIPAuth } from "@/lib/utils/server";
