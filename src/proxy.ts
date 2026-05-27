@@ -2,7 +2,49 @@ import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
 
-export async function proxy(req: NextRequest) {
+const setCorsHeaders = async (req: NextRequest) => {
+  const origin = req.headers.get("origin");
+
+  const allowedOrigins = [
+    "https://seanline.dev", // Replace with your apex domain
+    "http://localhost:3005",
+    "http://localhost:3010",
+  ];
+
+  const isAllowedOrigin =
+    origin &&
+    (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")); // Allow all Vercel dynamic previews
+
+  if (req.method === "OPTIONS") {
+    const response = new NextResponse(null, { status: 204 });
+
+    if (isAllowedOrigin && origin) {
+      response.headers.set("Access-Control-Allow-Origin", origin);
+    }
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+    response.headers.set(
+      "Access-Control-Allow-Methods",
+      "GET,POST,OPTIONS,PUT,DELETE,PATCH",
+    );
+    response.headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, Authorization, X-TRPC-Source, X-Client-Date, TRPC-Accept",
+    );
+
+    return response;
+  }
+
+  const response = NextResponse.next();
+
+  if (isAllowedOrigin && origin) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+    response.headers.set("Access-Control-Allow-Credentials", "true");
+  }
+
+  return response;
+};
+
+const checkAuth = async (req: NextRequest) => {
   const ip =
     req.headers.get("x-real-ip") ??
     req.headers.get("x-forwarded-for")?.split(",")[0] ??
@@ -22,5 +64,20 @@ export async function proxy(req: NextRequest) {
       });
     }
   }
-  return NextResponse.next();
+};
+
+export async function proxy(req: NextRequest) {
+  const corsResponse = await setCorsHeaders(req);
+  if (corsResponse) return corsResponse;
+  const authResponse = await checkAuth(req);
+  if (authResponse) return authResponse;
+
+  const finalResponse = NextResponse.next();
+  const origin = req.headers.get("origin");
+  if (origin && origin.endsWith(".vercel.app")) {
+    finalResponse.headers.set("Access-Control-Allow-Origin", origin);
+    finalResponse.headers.set("Access-Control-Allow-Credentials", "true");
+  }
+
+  return finalResponse;
 }
