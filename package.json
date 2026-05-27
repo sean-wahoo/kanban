@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3010",
+    "dev": "NODE_OPTIONS='--inspect' next dev --port 3010",
     "db:push-cloud": "npx prisma migrate diff --from-empty --to-schema prisma/schema.prisma --script > patch.sql && turso db shell kanban-prod < patch.sql && rm patch.sql",
     "db:push": "prisma migrate dev && prisma generate",
     "db:push-prod": "prisma migrate deploy && prisma db seed",
@@ -29,6 +29,7 @@
     "@trpc/tanstack-react-query": "^11.17.0",
     "@uiw/react-color": "^2.10.2",
     "@uiw/react-color-sketch": "^2.10.2",
+    "@vercel/analytics": "^2.0.1",
     "better-auth": "^1.6.11",
     "client-only": "^0.0.1",
     "jotai": "^2.20.0",

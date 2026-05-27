@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import { Geist, Geist_Mono, VT323 } from "next/font/google";
 import "./globals.scss";
 import { TRPCReactProvider } from "@/trpc/client";
@@ -33,6 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <TRPCReactProvider>
+      <Analytics />
       <html
         lang="en"
         className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
