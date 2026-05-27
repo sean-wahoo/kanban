@@ -9,6 +9,7 @@ const setCorsHeaders = async (req: NextRequest) => {
   const allowedOrigins = [
     getRootURL(),
     "https://seanline.dev",
+    "https://www.seanline.dev",
     "http://localhost:3005",
     "http://localhost:3010",
   ];
