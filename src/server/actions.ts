@@ -33,8 +33,6 @@ export async function createStatus(_prevData: any, formData: FormData) {
     const { data, success, error } =
       await CreateStatusSchema.safeParseAsync(rawData);
 
-    console.log({ data, success, error });
-
     if (!success) {
       return {
         message: "zod error",
@@ -70,8 +68,6 @@ export async function updateStatus(
     const { data, success, error } =
       await CreateStatusSchema.safeParseAsync(rawData);
 
-    console.log({ data, success, error });
-
     if (!success) {
       return {
         message: "zod error",
@@ -104,8 +100,6 @@ export async function createTask(_prevData: any, formData: FormData) {
 
     const { data, success, error } =
       await CreateTaskSchema.safeParseAsync(rawData);
-
-    console.log({ data, success, error });
 
     if (!success) {
       return {
@@ -159,8 +153,6 @@ export async function updateTask(
 
     const { data, success, error } =
       await CreateTaskSchema.safeParseAsync(rawData);
-
-    console.log({ data, success, error });
 
     if (!success) {
       return {

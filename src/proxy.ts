@@ -1,19 +1,23 @@
 import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
+import { getRootURL } from "./lib/utils/shared";
 
 const setCorsHeaders = async (req: NextRequest) => {
   const origin = req.headers.get("origin");
 
   const allowedOrigins = [
-    "https://seanline.dev", // Replace with your apex domain
+    getRootURL(),
+    "https://seanline.dev",
     "http://localhost:3005",
     "http://localhost:3010",
   ];
 
   const isAllowedOrigin =
     origin &&
-    (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")); // Allow all Vercel dynamic previews
+    (allowedOrigins.includes(origin) ||
+      origin.endsWith(".vercel.app") ||
+      origin.startsWith("http://localhost"));
 
   if (req.method === "OPTIONS") {
     const response = new NextResponse(null, { status: 204 });
