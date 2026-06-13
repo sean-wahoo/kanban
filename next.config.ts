@@ -10,10 +10,10 @@ const nextConfig: NextConfig = {
   basePath: "/kanban",
   assetPrefix: "/kanban-static",
   rewrites: async () => [
-    {
-      source: "/",
-      destination: "/kanban",
-    },
+    // {
+    //   source: "/",
+    //   destination: "/kanban",
+    // },
     {
       source: "/kanban/images/:path*",
       destination:
