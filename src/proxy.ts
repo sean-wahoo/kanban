@@ -88,5 +88,5 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/api/trpc/:path*", "/kanban/api/trpc/:path*", "/api/auth/:path*"],
+  matcher: [""],
 };

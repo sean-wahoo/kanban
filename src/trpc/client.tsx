@@ -30,12 +30,12 @@ function getQueryClient() {
 }
 function getUrl() {
   if (typeof window !== "undefined") {
-    return "/kanban/api/trpc";
+    return "/api/trpc";
   }
 
   if (process.env.VERCEL_URL)
-    return `https://${process.env.VERCEL_URL}/kanban/api/trpc`;
-  return `http://localhost:${env.PORT}/kanban/api/trpc`; // })();
+    return `https://${process.env.VERCEL_URL}/api/trpc`;
+  return `http://localhost:${env.PORT}/api/trpc`; // })();
 }
 export function TRPCReactProvider(
   props: Readonly<{

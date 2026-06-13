@@ -19,13 +19,13 @@ export const auth = betterAuth({
     provider: "sqlite",
   }),
   trustedOrigins: [
-    `${getBaseURL().replace("/kanban", "")}`,
-    `${getRootURL()}`,
+    `${getBaseURL()}`,
     `http://localhost:${env.PORT ?? 3010}`,
     `http://localhost:3005`,
     "*.vercel.app",
   ],
-  advanced: {
+  advancesd: {
+    useSecureCookies: true,
     crossSubDomainCookies: {
       enabled: true,
       domain: env.NODE_ENV === "production" ? getRootURL() : undefined,
