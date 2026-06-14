@@ -19,9 +19,9 @@ const CreateStatusSchema = zfd.formData({
 });
 const CreateTaskSchema = zfd.formData({
   title: zfd.text(z.string()),
-  description: zfd.text(z.string()),
-  statusId: zfd.text(z.optional(z.string())),
-  projectId: zfd.text(z.optional(z.string())),
+  description: zfd.text(z.string().optional()),
+  statusId: zfd.text(z.string().optional()),
+  projectId: zfd.text(z.string().optional()),
 });
 
 export async function createStatus(_prevData: any, formData: FormData) {
@@ -127,7 +127,7 @@ export async function createTask(_prevData: any, formData: FormData) {
     const newTask = await prisma.task.create({
       data: {
         title: data.title,
-        description: data.description,
+        description: data.description ?? "",
         projectId: data.projectId,
         statusId: data.statusId,
         userId: user.id,
