@@ -4,7 +4,7 @@ import { env } from "@/env.mjs";
 import { auth } from "../auth";
 
 export async function getIPAuth() {
-  if (env.NODE_ENV === "development") {
+  if (process.env.NODE_ENV === "development") {
     return true;
   }
 

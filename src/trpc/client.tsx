@@ -56,7 +56,7 @@ export function TRPCReactProvider(
             {
               if (
                 (typeof window === "undefined" &&
-                  env.NODE_ENV === "development") ||
+                  process.env.NODE_ENV === "development") ||
                 (typeof window !== "undefined" &&
                   window.location.hostname === "localhost") ||
                 (opts.direction === "down" &&

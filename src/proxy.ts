@@ -1,13 +1,11 @@
 import { env } from "@/env.mjs";
 import { auth } from "@/lib/auth";
 import { NextResponse, NextRequest } from "next/server";
-import { getRootURL } from "./lib/utils/shared";
 
 const setCorsHeaders = async (req: NextRequest) => {
   const origin = req.headers.get("origin");
 
   const allowedOrigins = [
-    getRootURL(),
     "https://seanline.dev",
     "https://www.seanline.dev",
     "http://localhost:3005",

@@ -1,5 +1,6 @@
 import { createEnv } from "@t3-oss/env-nextjs";
 import { z } from "zod";
+import { vercel } from "@t3-oss/env-nextjs/presets-zod";
 
 export const env = createEnv({
   server: {
@@ -12,47 +13,24 @@ export const env = createEnv({
     ADMIN_PASSWORD: z.string(),
     IP_ALLOWLIST: z.string().transform((arg) => arg.split(",")),
     BASE_URL: z.optional(z.string()),
-    ROOT_URL: z.optional(z.string()),
-    NODE_ENV: z.enum(["test", "development", "production"]),
     PORT: z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
-    ROOT_PORT: z.optional(
-      z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
-    ),
-    VERCEL_URL: z.optional(z.string()),
   },
   client: {
-    NEXT_PUBLIC_NODE_ENV: z
-      .enum(["test", "development", "production"])
-      .default("development"),
     NEXT_PUBLIC_PORT: z.optional(
       z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
     ),
-    NEXT_PUBLIC_ROOT_PORT: z.optional(
-      z.string().refine((s) => !isNaN(Number(s)) && isFinite(Number(s))),
-    ),
     NEXT_PUBLIC_BASE_URL: z.optional(z.string()),
-    NEXT_PUBLIC_ROOT_URL: z.optional(z.string()),
     NEXT_PUBLIC_VERCEL_URL: z.optional(z.string()),
   },
-  runtimeEnv: {
-    NODE_ENV: process.env.NODE_ENV,
-    NEXT_PUBLIC_NODE_ENV: process.env.NEXT_PUBLIC_NODE_ENV,
 
+  extends: [vercel()],
+  runtimeEnv: {
     BASE_URL: process.env.BASE_URL,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
-
     PORT: process.env.PORT,
     NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
-
-    ROOT_PORT: process.env.ROOT_PORT,
-    NEXT_PUBLIC_ROOT_PORT: process.env.NEXT_PUBLIC_ROOT_PORT,
-
     VERCEL_URL: process.env.VERCEL_URL,
     NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
-
-    ROOT_URL: process.env.ROOT_URL,
-    NEXT_PUBLIC_ROOT_URL: process.env.NEXT_PUBLIC_ROOT_URL,
-
     DATABASE_URL: process.env.DATABASE_URL,
     TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL,
     TURSO_DATABASE_TOKEN: process.env.TURSO_DATABASE_TOKEN,

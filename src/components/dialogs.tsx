@@ -325,7 +325,6 @@ export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
 
   const createStatusDialogRef = useRef<HTMLDialogElement>(null);
   const { data: sessionData } = authClient.useSession();
-  const { modalData } = useDialogs();
 
   if (!sessionData) {
     createStatusDialogRef.current?.hidePopover();

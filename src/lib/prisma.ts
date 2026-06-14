@@ -4,7 +4,7 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 
 const adapter =
-  env.NODE_ENV !== "production"
+  process.env.NODE_ENV !== "production"
     ? new PrismaBetterSqlite3({ url: "file:./dev.db" })
     : new PrismaLibSql({
         url: env.TURSO_DATABASE_URL,
@@ -21,4 +21,4 @@ const globalForPrisma = globalThis as unknown as {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (env.NODE_ENV === "production") globalForPrisma.prisma = prisma;
+if (process.env.NODE_ENV === "production") globalForPrisma.prisma = prisma;
