@@ -13,7 +13,7 @@ ul.dropdown {
   opacity: 0;
   animation: slide-in 0.2s ease forwards;
 
-  >li.option {
+  > li.option {
     padding: 0.6rem 0.8rem;
     cursor: pointer;
 
@@ -88,11 +88,11 @@ div.select_preview {
   anchor-name: --select-anchor;
   justify-content: space-between;
 
-  >span:first-of-type {
+  > span:first-of-type {
     margin-left: 8px;
   }
 
-  >button {
+  > button {
     z-index: 10;
     margin-inline: 4px 0.4em;
   }
@@ -129,7 +129,7 @@ div.select_options {
 
   transform: translateX(100%);
 
-  >span {
+  > span {
     cursor: pointer;
     user-select: none;
     color: c.$fg;
@@ -154,14 +154,14 @@ form.form {
   position: relative;
   font-size: 1.2rem;
 
-  >label {
+  > label {
     font-size: 0.8em;
     place-self: flex-start;
   }
 
-  >input,
-  >textarea,
-  >div {
+  > input,
+  > textarea,
+  > div {
     background-color: c.shades(c.$bg, lighten, 2);
     margin-bottom: 10px;
     padding: 4px 8px;
@@ -172,11 +172,11 @@ form.form {
     }
   }
 
-  >input {
+  > input {
     font-size: 0.8em;
   }
 
-  >button[type="submit"] {
+  > button[type="submit"] {
     background-color: c.$blue;
     flex-shrink: 1;
   }
@@ -202,7 +202,7 @@ dialog.view_task_dialog {
     font-size: revert;
   }
 
-  >header {
+  > header {
     display: flex;
     // justify-content: space-between;
     justify-content: flex-end;
@@ -210,26 +210,32 @@ dialog.view_task_dialog {
     gap: 0.6rem;
     padding: 0.2rem;
 
-    >h2 {
+    font-size: var(--step--1);
+
+    > h2 {
       margin-right: auto;
     }
 
-    >button {
+    > button {
       cursor: pointer;
     }
   }
 
-  >hr {
+  > hr {
     border: none;
     padding: 0.4rem;
     border-top: 1px solid c.shades(c.$bg, lighten, 8);
   }
 
-  >main {
+  > main {
     flex-grow: 1;
+    font-size: var(--step--2);
+    padding: 0.4rem;
   }
 
-  >footer {
-    font-size: 0.8rem;
+  > footer {
+    font-size: var(--step--2);
+    opacity: 0.6;
+    font-style: italic;
   }
 }
