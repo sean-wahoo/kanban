@@ -2,10 +2,14 @@
 
 import { auth } from "@/lib/auth";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/server/db";
+import { projects, statuses, tasks } from "@/server/db";
+import { nanoid } from "@/lib/id";
 import { zfd } from "zod-form-data";
 import { assertAuth, getIPAuth } from "@/lib/utils/server";
 import { getBaseURL } from "@/lib/utils/shared";
+import { and, eq } from "drizzle-orm";
+import { FormState } from "@/components/form";
 
 const CreateStatusSchema = zfd.formData({
   name: zfd.text(z.string()),
@@ -40,13 +44,16 @@ export async function createStatus(_prevData: any, formData: FormData) {
       };
     }
 
-    const newStatus = await prisma.status.create({
-      data: {
+    const [newStatus] = await db
+      .insert(statuses)
+      .values({
+        id: nanoid(9),
         name: data.name,
         color: data.color,
+        default: data.default,
         userId: user.id,
-      },
-    });
+      })
+      .returning();
 
     return { message: "success", statusId: newStatus.id };
   } catch (e) {
@@ -75,16 +82,16 @@ export async function updateStatus(
       };
     }
 
-    const newStatus = await prisma.status.update({
-      where: {
-        id: statusId,
-        userId: user.id,
-      },
-      data: {
+    const [newStatus] = await db
+      .update(statuses)
+      .set({
         name: data.name,
         color: data.color,
-      },
-    });
+        default: data.default,
+        updatedAt: new Date(),
+      })
+      .where(and(eq(statuses.id, statusId), eq(statuses.userId, user.id)))
+      .returning();
 
     return { message: "success", statusId: newStatus.id };
   } catch (e) {
@@ -92,7 +99,13 @@ export async function updateStatus(
     return { message: "error", error: e };
   }
 }
-export async function createTask(_prevData: any, formData: FormData) {
+interface CreateTaskFormState extends FormState {
+  taskId?: string;
+}
+export async function createTask(
+  _prevData: CreateTaskFormState | FormState,
+  formData: FormData,
+): Promise<CreateTaskFormState | FormState> {
   try {
     const { user } = await assertAuth();
 
@@ -103,47 +116,48 @@ export async function createTask(_prevData: any, formData: FormData) {
 
     if (!success) {
       return {
-        message: "zod error",
-        error: z.flattenError(error),
+        errors: z.flattenError(error).fieldErrors,
       };
     }
 
     if (!data.statusId) {
-      const defaultStatus = await prisma.status.findFirst({
-        where: {
-          default: true,
-          userId: user.id,
-        },
-      });
+      const [defaultStatus] = await db
+        .select()
+        .from(statuses)
+        .where(and(eq(statuses.default, true), eq(statuses.userId, user.id)))
+        .limit(1);
       if (!defaultStatus) {
         return {
-          message: "error",
-          error: new Error("no default status found"),
+          formError: "no default status found",
         };
       }
       data.statusId = defaultStatus.id;
     }
 
-    const newTask = await prisma.task.create({
-      data: {
+    const [newTask] = await db
+      .insert(tasks)
+      .values({
+        id: nanoid(9),
         title: data.title,
         description: data.description ?? "",
         projectId: data.projectId,
         statusId: data.statusId,
         userId: user.id,
-      },
-    });
+      })
+      .returning();
 
-    return { message: "success", taskId: newTask.id };
+    return { taskId: newTask.id };
   } catch (e) {
-    console.error(e);
-    return { message: "error", error: e };
+    const errorMessage = `createTask oops! - ${e}`;
+    console.error(errorMessage);
+    return { formError: errorMessage };
   }
 }
 
+interface UpdateTaskFormState extends CreateTaskFormState {}
 export async function updateTask(
   taskId: string,
-  _prevData: any,
+  _prevData: UpdateTaskFormState,
   formData: FormData,
 ) {
   try {
@@ -161,23 +175,23 @@ export async function updateTask(
       };
     }
 
-    const newTask = await prisma.task.update({
-      where: {
-        id: taskId,
-        userId: user.id,
-      },
-      data: {
+    const [newTask] = await db
+      .update(tasks)
+      .set({
         title: data.title,
         description: data.description,
         projectId: data.projectId,
         statusId: data.statusId,
-      },
-    });
+        updatedAt: new Date(),
+      })
+      .where(and(eq(tasks.id, taskId), eq(tasks.userId, user.id)))
+      .returning();
 
-    return { message: "success", taskId: newTask.id };
+    return { taskId: newTask.id };
   } catch (e) {
-    console.error(e);
-    return { message: "error", error: e };
+    const errorMessage = `updateTask oops! - ${e}`;
+    console.error(errorMessage);
+    return { formError: errorMessage };
   }
 }
 
@@ -185,68 +199,40 @@ const ProjectSchema = zfd.formData({
   title: zfd.text(z.string()),
   description: zfd.text(z.string()),
 });
-export async function createProject(_prevData: any, formData: FormData) {
-  const { user } = await assertAuth();
-
-  const rawData = Object.fromEntries(formData.entries());
-
-  const { data, success, error } = await ProjectSchema.safeParseAsync(rawData);
-  if (!success) {
-    return {
-      message: "zod error",
-      error: z.flattenError(error),
-    };
-  }
-
-  const newProject = await prisma.project.create({
-    data: {
-      title: data.title,
-      description: data.description,
-      userId: user.id,
-    },
-  });
-
-  return { message: success, projectId: newProject.id };
+interface CreateProjectFormState extends FormState {
+  projectId?: string;
 }
-
-const LoginSchema = zfd.formData({
-  email: zfd.text(z.string()),
-  password: zfd.text(z.string()),
-});
-export async function signIn(_prevData: any, formData: FormData) {
+export async function createProject(
+  _prevState: FormState,
+  formData: FormData,
+): Promise<CreateProjectFormState | FormState> {
   try {
-    if (!(await getIPAuth())) {
-      return {
-        message: "ip not allowed",
-        error: new Error("ip not allowed"),
-      };
-    }
+    const { user } = await assertAuth();
 
     const rawData = Object.fromEntries(formData.entries());
 
-    const { data, success, error } = await LoginSchema.safeParseAsync(rawData);
-
+    const { data, success, error } =
+      await ProjectSchema.safeParseAsync(rawData);
     if (!success) {
       return {
-        message: "zod error",
-        error: z.flattenError(error),
+        errors: z.flattenError(error).fieldErrors,
       };
     }
 
-    await auth.api.signInEmail({
-      body: {
-        email: data.email,
-        password: data.password,
-        rememberMe: true,
-        callbackURL: getBaseURL(),
-      },
-    });
+    const [newProject] = await db
+      .insert(projects)
+      .values({
+        id: nanoid(9),
+        title: data.title,
+        description: data.description,
+        userId: user.id,
+      })
+      .returning();
 
-    return {
-      message: "success",
-    };
+    return { projectId: newProject.id };
   } catch (e) {
+    const errorMessage = `createProject oops! - ${e}`;
     console.error(e);
-    return { message: "error", error: e };
+    return { formError: errorMessage };
   }
 }

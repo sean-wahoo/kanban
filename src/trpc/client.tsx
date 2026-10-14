@@ -88,3 +88,5 @@ export function TRPCReactProvider(
 
 export type RouterInput = inferRouterInputs<AppRouter>;
 export type RouterOutput = inferRouterOutputs<AppRouter>;
+
+export type Task = RouterOutput["tasks"]["getTask"];

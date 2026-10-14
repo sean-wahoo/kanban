@@ -14,9 +14,12 @@ import {
   useState,
 } from "react";
 import styles from "./styles.module.scss";
-import { ChevronDownIcon } from "lucide-react";
+import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react";
 import { c, clickInRect } from "@/lib/utils/client";
 import { ErrorBoundary } from "react-error-boundary";
+
+import { Select as BaseSelect } from "@base-ui/react";
+import Spinner from "./spinner";
 
 export interface SelectOption {
   label: string;
@@ -26,6 +29,10 @@ export interface SelectOption {
 interface SelectProps extends ComponentProps<"div"> {
   options: SelectOption[];
   name?: string;
+  label?: string;
+  defaultValue?: string;
+  placeholder?: string;
+  loading?: boolean;
   ref?: RefObject<SelectInputHandle | null>;
   multiselect?: boolean;
   onValueChange?: (newVal: string[], oldVal: string[]) => void;
@@ -37,143 +44,89 @@ export interface SelectInputHandle extends HTMLDivElement {
 
 const Select = ({
   options,
-  ref = createRef<SelectInputHandle>(),
-  multiselect,
-  onValueChange,
+  label,
+  placeholder = "placeholder",
+  name = "",
+  loading = false,
+  defaultValue = "",
   ...props
 }: SelectProps) => {
-  const selectId = useId();
-  const [showOptions, setShowOptions] = useState<boolean>(false);
-  const [selected, setSelected] = useState<string[]>([]);
-
-  const selectOptionsRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
-
-  const handleOptionSelect = useEffectEvent<MouseEventHandler<HTMLSpanElement>>(
-    (e) => {
-      const value = e.currentTarget.dataset.value as string;
-      const oldOptions = selected;
-      let newOptions = new Set<string>(selected);
-      if (multiselect) {
-        if (newOptions.has(value)) {
-          newOptions.delete(value);
-        } else {
-          newOptions.add(value);
-        }
-        setSelected(Array.from(newOptions));
-      } else {
-        newOptions = new Set([value]);
-      }
-
-      setSelected([...newOptions]);
-      onValueChange?.([...newOptions], oldOptions);
-    },
-  );
-
-  const toggleOptions = useEffectEvent(() => {
-    setShowOptions(!showOptions);
-  });
-
-  useEffect(() => {
-    const closeOptsListener = (e: MouseEvent) => {
-      if (selectOptionsRef.current && buttonRef.current) {
-        if (
-          !clickInRect(
-            e.clientX,
-            e.clientY,
-            selectOptionsRef.current.getBoundingClientRect(),
-          ) &&
-          !clickInRect(
-            e.clientX,
-            e.clientY,
-            buttonRef.current.getBoundingClientRect(),
-          )
-        ) {
-          setShowOptions(false);
-        }
-      }
-    };
-
-    document.addEventListener("click", closeOptsListener);
-    return () => document.removeEventListener("click", closeOptsListener);
-  }, [selectId]);
-
-  useEffect(() => {
-    for (const opt of options) {
-      if (opt.default) {
-        setSelected([opt.value]);
-      }
-    }
-  }, [options]);
-
-  const selectRef = useRef<SelectInputHandle>(ref.current);
-
-  useImperativeHandle(ref, () => ({
-    ...ref.current!,
-    clear: () => setSelected([]),
-    getValue: () => selected,
-  }));
-
-  props.style = {
-    ...props.style,
-    anchorName: `--select-anchor-${selectId}`,
-  };
   return (
-    <ErrorBoundary fallback={<p>select error</p>}>
-      <Suspense fallback={<p>select loading</p>}>
-        <div {...props} className={styles.select} ref={selectRef} id={selectId}>
-          <div className={styles.select_preview}>
-            {multiselect ? (
-              selected.map((sel) => (
-                <span key={`${selectId}-sel-${sel}`}>
-                  {options?.find((o) => o.value === sel)?.label}
-                </span>
-              ))
-            ) : (
-              <span>{options.find((o) => o.value === selected[0])?.label}</span>
-            )}
-            <button
-              type="button"
-              onClick={toggleOptions}
-              ref={buttonRef}
-              popoverTargetAction="toggle"
-              popoverTarget={`${selectId}-opts`}
-            >
-              <ChevronDownIcon />
-            </button>
-          </div>
-          <div
-            id={`${selectId}-opts`}
+    <div className={styles.select}>
+      <BaseSelect.Root
+        modal={false}
+        name={name}
+        items={options}
+        defaultValue={options.findIndex((o) => o.value === defaultValue)}
+        itemToStringLabel={(o) => options[o]?.label}
+        itemToStringValue={(o) => options[o]?.value}
+      >
+        <div className={styles.select_preview}>
+          {label ? (
+            <BaseSelect.Label className={styles.select_label}>
+              {label}
+            </BaseSelect.Label>
+          ) : null}
+          <BaseSelect.Trigger
             className={c(
-              styles.select_options,
-              showOptions ? styles.shown : null,
+              loading ? styles.loading : null,
+              styles.select_trigger,
             )}
-            popover="manual"
-            ref={selectOptionsRef}
-            style={{
-              positionAnchor: `--select-anchor-${selectId}`,
-            }}
+            disabled={loading}
           >
-            {options.map((opt, i) => (
-              <span
-                key={`${selectId}-${opt.value}-${i}`}
-                data-value={opt.value}
-                onClick={handleOptionSelect}
-                className={c(
-                  styles.select_option,
-                  selected.filter((s) => s) && selected.includes(opt.value)
-                    ? styles.active
-                    : null,
-                )}
-              >
-                {opt.label}
-              </span>
-            ))}
-          </div>
+            {loading ? (
+              <Spinner />
+            ) : (
+              <>
+                <BaseSelect.Value
+                  className={styles.select_value}
+                  placeholder={placeholder}
+                />
+                <BaseSelect.Icon>
+                  <ChevronDownIcon size={16} />
+                </BaseSelect.Icon>
+              </>
+            )}
+          </BaseSelect.Trigger>
         </div>
-        <input id={props.id} type="hidden" value={selected} name={props.name} />
-      </Suspense>
-    </ErrorBoundary>
+        <BaseSelect.Portal>
+          {/* <Select.Backdrop /> */}
+          <BaseSelect.Positioner
+            alignItemWithTrigger={false}
+
+            sideOffset={2}
+            className={styles.select_positioner}
+          >
+            <BaseSelect.Popup className={styles.select_popup}>
+              {/* <Select.ScrollUpArrow /> */}
+              <BaseSelect.ScrollUpArrow>
+                <ChevronUpIcon />
+              </BaseSelect.ScrollUpArrow>
+              <BaseSelect.Arrow />
+              <BaseSelect.List>
+                {options.map((opt, i) => (
+                  <BaseSelect.Item
+                    key={`${opt.value}-${i}`}
+                    value={opt.value}
+                    className={styles.select_item}
+                  >
+                    {/* <BaseSelect.ItemIndicator> */}
+                    {/*   <CheckIcon size={14} /> */}
+                    {/* </BaseSelect.ItemIndicator> */}
+                    <BaseSelect.ItemText>{opt.label}</BaseSelect.ItemText>
+                  </BaseSelect.Item>
+                ))}
+              </BaseSelect.List>
+              <BaseSelect.ScrollDownArrow>
+                <ChevronDownIcon />
+              </BaseSelect.ScrollDownArrow>
+            </BaseSelect.Popup>
+          </BaseSelect.Positioner>
+        </BaseSelect.Portal>
+      </BaseSelect.Root>
+    </div>
   );
 };
+
 export default Select;
+// export default OldSelect;

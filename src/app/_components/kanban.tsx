@@ -1,22 +1,38 @@
 "use client";
-import { useTRPC } from "@/trpc/client";
+import { type Task, useTRPC } from "@/trpc/client";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { ErrorBoundary } from "next/dist/client/components/error-boundary";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import styles from "./styles.module.scss";
 import { DragDropProvider } from "@dnd-kit/react";
-import Column from "./column";
+import Column, { ColumnLoading } from "./column";
+import { TaskDialog } from "@/components/dialogs";
+import { useAtomValue } from "jotai";
+import { editingTaskAtom } from "@/store/task";
+import { Dialog } from "@base-ui/react";
+
+export const KanbanLoading = () => {
+  return (
+    <div className={styles.status_columns}>
+      {Array.from({ length: 3 }).map((_, i) => (
+        <ColumnLoading key={`column_loading_${i}`} />
+      ))}
+    </div>
+  );
+};
 
 const Kanban = () => {
   const trpc = useTRPC();
-  const { data: tasks } = useSuspenseQuery(trpc.tasks.getTasks.queryOptions());
   const { data: statuses } = useSuspenseQuery(
     trpc.status.getStatuses.queryOptions(),
   );
+
+  // const [editingTask, setEditingTask] = useState<Task | null>();
+  const editingTask = useAtomValue(editingTaskAtom);
 
   const statusesKey = trpc.status.getStatuses.queryKey();
   const tasksKey = trpc.tasks.getTasks.queryKey();
@@ -78,10 +94,13 @@ const Kanban = () => {
   );
 
   const queryClient = useQueryClient();
+  const editTaskDialogHandle = Dialog.createHandle<HTMLElement>();
+
   return (
     <div className={styles.status_columns}>
-      <ErrorBoundary errorComponent={() => <p>status column error!</p>}>
-        <Suspense fallback={<p>loading status column...</p>}>
+      <Suspense fallback={<KanbanLoading />}>
+        <TaskDialog task={editingTask} handle={editTaskDialogHandle} />
+        <ErrorBoundary errorComponent={() => <p>status column error!</p>}>
           <DragDropProvider
             onDragEnd={async (e) => {
               if (e.canceled) return;
@@ -125,22 +144,20 @@ const Kanban = () => {
             {statuses
               .sort((a, b) => a.order - b.order)
               .map((status) => {
-                const tasksByStatus = tasks.filter(
-                  (t) => t.statusId === status.id,
-                );
                 return (
                   <Column
+                    loading={true}
                     key={status.id}
-                    statusId={status.id}
+                    status={status}
                     index={status.order}
-                    tasks={tasksByStatus}
                   />
                 );
               })}
           </DragDropProvider>
-        </Suspense>
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </Suspense>
     </div>
   );
 };
+
 export default Kanban;

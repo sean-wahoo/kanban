@@ -11,11 +11,9 @@ export default async function Home() {
   prefetch(trpc.status.getStatuses.queryOptions());
   return (
     <HydrateClient>
-      <Suspense fallback={<p>loading...</p>}>
-        <main className={styles.main}>
-          <Kanban />
-        </main>
-      </Suspense>
+      <main className={styles.main}>
+        <Kanban />
+      </main>
     </HydrateClient>
   );
 }

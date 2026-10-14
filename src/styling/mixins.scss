@@ -1,0 +1,21 @@
+@use "colors.scss" as c;
+
+@mixin shimmer($base_color: c.shades(c.$bg, lighten, 4),
+  $shimmer_color: c.shades(c.$bg, lighten, 8)) {
+  background: linear-gradient(90deg,
+      $base_color 25%,
+      $shimmer_color 50%,
+      $base_color 75%);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}

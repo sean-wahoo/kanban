@@ -1,6 +1,7 @@
 import { authProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
-import { TRPCError } from "@trpc/server";
 import z from "zod";
+import { eq } from "drizzle-orm";
+import { statuses } from "@/server/db";
 
 export const statusRouter = createTRPCRouter({
   getStatus: baseProcedure
@@ -10,31 +11,18 @@ export const statusRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      try {
-        const status = await ctx.prisma.status.findUniqueOrThrow({
-          where: {
-            id: input.statusId,
-          },
-          include: {
-            tasks: true,
-          },
-        });
-        return status;
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-        });
+      const [status] = await ctx.db
+        .select()
+        .from(statuses)
+        .where(eq(statuses.id, input.statusId))
+        .limit(1);
+      if (!status) {
+        throw new Error("status not found");
       }
+      return status;
     }),
   getStatuses: baseProcedure.query(async ({ ctx }) => {
-    try {
-      const statuses = await ctx.prisma.status.findMany();
-      return statuses;
-    } catch (e) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-      });
-    }
+    return ctx.db.select().from(statuses);
   }),
   updateStatusOrders: authProcedure
     .input(
@@ -48,23 +36,17 @@ export const statusRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      try {
-        const updatePromises = [];
-        for (const status of input.statuses) {
-          updatePromises.push(
-            ctx.prisma.status.update({
-              where: { id: status.id },
-              data: { order: status.newOrder },
-            }),
-          );
-        }
-
-        return await Promise.all(updatePromises);
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-        });
+      const updatePromises = [];
+      for (const status of input.statuses) {
+        updatePromises.push(
+          ctx.db
+            .update(statuses)
+            .set({ order: status.newOrder })
+            .where(eq(statuses.id, status.id)),
+        );
       }
+
+      return await Promise.all(updatePromises);
     }),
   deleteStatus: authProcedure
     .input(
@@ -73,14 +55,6 @@ export const statusRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ input, ctx }) => {
-      try {
-        await ctx.prisma.status.delete({
-          where: { id: input.statusId },
-        });
-      } catch (e) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-        });
-      }
+      await ctx.db.delete(statuses).where(eq(statuses.id, input.statusId));
     }),
 });

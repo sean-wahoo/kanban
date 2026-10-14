@@ -1,5 +1,5 @@
 import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { db } from "@/server/db";
 import { getIPAuth } from "@/lib/utils/server";
 import { initTRPC, TRPCError } from "@trpc/server";
 import { headers } from "next/headers";
@@ -9,7 +9,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   const ip = headersObj.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
   const session = await auth.api.getSession({ headers: headersObj });
 
-  return { prisma, sessionData: session, ip, ...opts };
+  return { db, sessionData: session, ip, ...opts };
 };
 
 // Avoid exporting the entire t-object
@@ -30,7 +30,7 @@ export const createCallerFactory = t.createCallerFactory;
 export const baseProcedure = t.procedure;
 
 export const authMiddleware = t.middleware(async ({ next, ctx }) => {
-  if (!getIPAuth()) {
+  if (!(await getIPAuth())) {
     throw new TRPCError({
       code: "UNAUTHORIZED",
       message: "ip not allowed",

@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
 import { authProcedure, baseProcedure, createTRPCRouter } from "@/trpc/init";
 import { z } from "zod";
-import { Prisma } from "../../../generated/prisma/client";
+import { eq, inArray } from "drizzle-orm";
+import { tasks } from "@/server/db";
 
 export const tasksRouter = createTRPCRouter({
   getTask: baseProcedure
@@ -11,46 +12,28 @@ export const tasksRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      try {
-        const task = await ctx.prisma.task.findFirst({
-          where: {
-            id: input.taskId,
-          },
-        });
-        if (!task) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-          });
-        }
-        return task;
-      } catch (e) {
+      const [task] = await ctx.db
+        .select()
+        .from(tasks)
+        .where(eq(tasks.id, input.taskId))
+        .limit(1);
+      if (!task) {
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          cause: e,
+          code: "NOT_FOUND",
         });
       }
+      return task;
     }),
   getTasks: baseProcedure
     .input(z.optional(z.object({ statusIds: z.optional(z.array(z.string())) })))
     .query(async ({ ctx, input }) => {
-      try {
-        const queryOpts: Prisma.TaskFindManyArgs = {};
-        if (input?.statusIds) {
-          queryOpts.where = {
-            ...queryOpts.where,
-            statusId: {
-              in: input.statusIds,
-            },
-          };
-        }
-        const tasks = await ctx.prisma.task.findMany(queryOpts);
-        return tasks;
-      } catch (e) {
-        console.log(JSON.stringify(e, null, 2));
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-        });
+      if (input?.statusIds?.length) {
+        return ctx.db
+          .select()
+          .from(tasks)
+          .where(inArray(tasks.statusId, input.statusIds));
       }
+      return ctx.db.select().from(tasks);
     }),
   updateTaskStatus: authProcedure
     .input(
@@ -60,21 +43,10 @@ export const tasksRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        await ctx.prisma.task.update({
-          where: {
-            id: input.taskId,
-            statusId: {
-              not: input.newStatusId,
-            },
-          },
-          data: {
-            statusId: input.newStatusId,
-          },
-        });
-      } catch (e) {
-        console.error(e);
-      }
+      await ctx.db
+        .update(tasks)
+        .set({ statusId: input.newStatusId })
+        .where(eq(tasks.id, input.taskId));
     }),
   deleteTask: authProcedure
     .input(
@@ -83,15 +55,6 @@ export const tasksRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      try {
-        await ctx.prisma.task.delete({
-          where: {
-            id: input.taskId,
-            userId: ctx.sessionData?.user.id,
-          },
-        });
-      } catch (e) {
-        console.error(e);
-      }
+      await ctx.db.delete(tasks).where(eq(tasks.id, input.taskId));
     }),
 });

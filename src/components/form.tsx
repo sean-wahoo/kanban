@@ -4,8 +4,15 @@ import styles from "./styles.module.scss";
 import { ComponentProps } from "react";
 import { c } from "@/lib/utils/client";
 import { Colors } from "@/lib/utils/shared";
+import { Form as BaseForm } from "@base-ui/react";
 
 interface FormProps extends ComponentProps<typeof NextForm> {}
+
+export interface FormState {
+  errors?: BaseForm.Props["errors"];
+  formError?: string;
+}
+
 const Form = ({ children, className, ...props }: FormProps) => {
   return (
     <NextForm {...props} className={c(styles.form, className)}>

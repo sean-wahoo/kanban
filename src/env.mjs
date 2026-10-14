@@ -4,7 +4,6 @@ import { vercel } from "@t3-oss/env-nextjs/presets-zod";
 
 export const env = createEnv({
   server: {
-    DATABASE_URL: z.string(),
     TURSO_DATABASE_URL: z.string(),
     TURSO_DATABASE_TOKEN: z.string(),
     BETTER_AUTH_URL: z.optional(z.string()),
@@ -31,7 +30,6 @@ export const env = createEnv({
     NEXT_PUBLIC_PORT: process.env.NEXT_PUBLIC_PORT,
     VERCEL_URL: process.env.VERCEL_URL,
     NEXT_PUBLIC_VERCEL_URL: process.env.NEXT_PUBLIC_VERCEL_URL,
-    DATABASE_URL: process.env.DATABASE_URL,
     TURSO_DATABASE_URL: process.env.TURSO_DATABASE_URL,
     TURSO_DATABASE_TOKEN: process.env.TURSO_DATABASE_TOKEN,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,

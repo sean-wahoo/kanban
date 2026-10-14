@@ -1,8 +1,9 @@
+import { Task } from "@/trpc/client";
 import { atom } from "jotai";
 
-const _taskAtom = atom("");
+const _editingTaskAtom = atom<Task>();
 
-export const taskAtom = atom(
-  (get) => get(_taskAtom),
-  (_get, set, newVal: string) => set(_taskAtom, newVal),
+export const editingTaskAtom = atom(
+  (get) => get(_editingTaskAtom),
+  (_get, set, newVal: Task) => set(_editingTaskAtom, newVal),
 );

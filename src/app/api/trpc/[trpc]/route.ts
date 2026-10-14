@@ -6,14 +6,11 @@ const handler = (req: Request) =>
     endpoint: "/api/trpc",
     req,
     router: appRouter,
-    onError:
-      process.env.NODE_ENV === "development"
-        ? ({ path, error }) => {
-            console.error(
-              `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
-            );
-          }
-        : undefined,
+    onError: ({ path, error }) => {
+      console.error(
+        `❌ tRPC failed on ${path ?? "<no-path>"}: ${error.message}`,
+      );
+    },
     createContext: () => createTRPCContext({ headers: req.headers }),
   });
 const setCorsHeaders = (res: Response, origin: string | null) => {

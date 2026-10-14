@@ -2,118 +2,166 @@
 
 import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/form";
-import { useId, useRef } from "react";
-import { MenuIcon } from "lucide-react";
+import { useActionState, useId, useRef } from "react";
+import { MenuIcon, UserIcon } from "lucide-react";
 import Dropdown, { type DropdownOption } from "@/components/dropdown";
-import { useDialogs } from "@/components/dialog";
 import styles from "./styles.module.scss";
 import { useIPAuth } from "@/lib/utils/client";
 import Link from "next/link";
+import Image from "next/image";
+
+import { Dialog, Form, Fieldset, Field, Input, Menu } from "@base-ui/react";
+import Select, { SelectInputHandle } from "@/components/select";
+import { createTask } from "@/server/actions";
+import { useTRPC } from "@/trpc/client";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  CreateProjectDialog,
+  CreateTaskDialog,
+  LoginDialog,
+} from "@/components/dialogs";
 
 const Header = () => {
-  const { openModal } = useDialogs();
+  const createTaskDialogHandle = Dialog.createHandle<HTMLElement>();
+  const createProjectDialogHandle = Dialog.createHandle<HTMLElement>();
+  const loginDialogHandle = Dialog.createHandle<HTMLElement>();
   const dropdownOptions: DropdownOption[] = [
     {
       id: "create-task",
-      item: "Create task",
+      item: "Task",
       onClick: (e) => {
         e.preventDefault();
-        openModal("CREATE_TASK", {});
+        createTaskDialogHandle.open(null);
       },
     },
-    {
-      id: "create-status",
-      item: "Create status",
-      onClick: (e) => {
-        e.preventDefault();
-        openModal("CREATE_STATUS", {});
-      },
-    },
+    // {
+    //   id: "create-status",
+    //   item: "Create status",
+    //   onClick: (e) => {
+    //     e.preventDefault();
+    //     // openModal("CREATE_STATUS", {});
+    //   },
+    // },
     {
       id: "create-project",
-      item: "Create project",
+      item: "Project",
       onClick: (e) => {
         e.preventDefault();
-        openModal("CREATE_PROJECT", {});
+        createProjectDialogHandle.open(null);
       },
     },
   ];
   const plusTriggerId = useId();
 
   const ipAuth = useIPAuth();
-  const { data: sessionData } = authClient.useSession();
+  const { data: sessionData, isPending } = authClient.useSession();
   const mobileNavTriggerId = useId();
 
+  const authDropdownTriggerId = useId();
+
   const navHeaderRef = useRef<HTMLUListElement>(null);
-  const dropdownCreateRef = useRef<HTMLUListElement>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
 
-  const createButton = (
-    <button data-dropdown-trigger={plusTriggerId} ref={createButtonRef}>
-      Create
-    </button>
-  );
-  return (
-    <header className={styles.header}>
-      {sessionData?.user ? (
-        <>
-          <button
-            data-dropdown-trigger={mobileNavTriggerId}
-            className={styles.mobile_nav_trigger}
-          >
-            <MenuIcon />
-          </button>
-          <nav className={styles.header_nav}>
-            {createButton}
-            <Link href="#tasks">Tasks</Link>
-            <Link href="#projects">Projects</Link>
-          </nav>
-          <Dropdown
-            options={[
-              {
-                item: createButton,
-              },
-              { item: <Link href="#tasks">Tasks</Link> },
-              { item: <Link href="#projects">Projects</Link> },
-            ]}
-            style={{
-              marginTop: "3.5rem",
-            }}
-            triggerId={mobileNavTriggerId}
-            ref={navHeaderRef}
-          />
-          <Dropdown
-            style={{
-              marginTop: "3.5rem",
-            }}
-            options={dropdownOptions}
-            triggerId={plusTriggerId}
-            triggerRef={createButtonRef}
-            ref={dropdownCreateRef}
-          />
-        </>
-      ) : null}
+  const newMenuHandle = Menu.createHandle<HTMLElement>();
+  const authMenuHandle = Menu.createHandle<HTMLElement>();
+  // const newButton = (
+  // );
 
-      {ipAuth ? (
-        <>
-          <Button
-            onClick={async () => {
-              if (!ipAuth) {
-                return;
-              }
-              if (!sessionData) {
-                openModal("LOGIN", {});
-                return;
-              }
-              await authClient.signOut();
-            }}
-            className={styles.admin}
-          >
-            {!!sessionData ? "Logout" : "Login"}
-          </Button>
-        </>
-      ) : null}
-    </header>
+  // const createTaskHandle = Menu.createHandle<HTMLElement>();
+  // const createProjectHandle = Menu.createHandle<HTMLElement>();
+  // const loginHandle = Menu.createHandle<HTMLElement>();
+
+  return (
+    <>
+      <CreateTaskDialog handle={createTaskDialogHandle} />
+      <CreateProjectDialog handle={createProjectDialogHandle} />
+      <LoginDialog handle={loginDialogHandle} />
+      <header className={styles.header}>
+        <Link href="/">
+          <Image src="/kanban_logo.svg" width={48} height={48} alt="" />
+        </Link>
+        {!isPending && sessionData?.user ? (
+          <>
+            <button
+              data-dropdown-trigger={mobileNavTriggerId}
+              className={styles.mobile_nav_trigger}
+            >
+              <MenuIcon />
+            </button>
+            <nav className={styles.header_nav}>
+              <Menu.Trigger
+                handle={newMenuHandle}
+                className={styles.new_button}
+                ref={createButtonRef}
+              >
+                + New
+              </Menu.Trigger>
+              {/* {createButton} */}
+              {/* <Link href="#tasks">Tasks</Link> */}
+              {/* <Link href="#projects">Projects</Link> */}
+            </nav>
+            <Dropdown
+              options={[
+                { item: <Link href="#tasks">Tasks</Link> },
+                { item: <Link href="#projects">Projects</Link> },
+              ]}
+              style={{
+                marginTop: "3.5rem",
+              }}
+              // triggerId={mobileNavTriggerId}
+              ref={navHeaderRef}
+            />
+            <Dropdown
+              style={{
+                marginTop: "3.5rem",
+              }}
+              options={dropdownOptions}
+              handle={newMenuHandle}
+              // triggerId={plusTriggerId}
+              // triggerRef={createButtonRef}
+              // ref={dropdownCreateRef}
+            />
+          </>
+        ) : null}
+
+        {ipAuth ? (
+          <>
+            <Menu.Trigger
+              // onClick={async () => {
+              //   if (!ipAuth) {
+              //     return;
+              //   }
+              //   if (!sessionData) {
+              //     loginDialogHandle.open("login");
+              //     return;
+              //   }
+              //   await authClient.signOut();
+              // }}
+              handle={authMenuHandle}
+
+              className={styles.admin}
+            >
+              <UserIcon />
+              {/* {!!sessionData ? "Logout" : "Login"} */}
+            </Menu.Trigger>
+            <Dropdown
+              options={[
+                !!sessionData
+                  ? { item: "Logout", onClick: () => authClient.signOut() }
+                  : {
+                      item: "Login",
+                      onClick: () => loginDialogHandle.open("login"),
+                    },
+              ]}
+              handle={authMenuHandle}
+              style={{
+                marginTop: "3.5rem",
+              }}
+            />
+          </>
+        ) : null}
+      </header>
+    </>
   );
 };
 export default Header;

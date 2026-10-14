@@ -1,16 +1,8 @@
-"use client";
-
+import { authClient } from "@/lib/auth-client";
+import { createProject, createTask, updateTask } from "@/server/actions";
+import { RouterOutput, useTRPC } from "@/trpc/client";
+import { Button, Dialog, Input, Form, Field, Fieldset } from "@base-ui/react";
 import {
-  createProject,
-  createStatus,
-  createTask,
-  signIn,
-  updateStatus,
-  updateTask,
-} from "@/server/actions";
-import { useTRPC } from "@/trpc/client";
-import {
-  useMutation,
   useQuery,
   useQueryClient,
   useSuspenseQuery,
@@ -18,526 +10,614 @@ import {
 import {
   useRef,
   useActionState,
-  ComponentProps,
-  RefObject,
-  useEffect,
+  SubmitEvent,
   useState,
+  useEffect,
+  Suspense,
+  useLayoutEffect,
 } from "react";
-import { useRouter } from "next/navigation";
-import Dialog, { useDialogs } from "./dialog";
-import Form, { Button } from "./form";
-import Select, { SelectInputHandle, SelectOption } from "./select";
+// import { Button } from "./form";
+import { SelectInputHandle } from "./select";
 import styles from "./styles.module.scss";
-import { authClient } from "@/lib/auth-client";
-import { Colors } from "@/lib/utils/shared";
-import { Sketch } from "@uiw/react-color";
-import { PencilIcon, TrashIcon } from "lucide-react";
-import { useMounted } from "@/lib/hooks";
+import componentStyles from "@/app/_components/styles.module.scss";
+import z from "zod";
+import Select from "./select";
+import Spinner from "./spinner";
+import { Task } from "@/server/db";
+import { c } from "@/lib/utils/client";
+import { ArrowLeftIcon, EditIcon, XIcon } from "lucide-react";
 
-interface DialogProps extends Omit<ComponentProps<typeof Dialog>, "ref"> {
-  ref?: React.Ref<HTMLDialogElement>;
+interface BaseFieldProps {
+  name: string;
+  label: string;
+  controlProps?: Field.Control.Props;
+  labelProps?: Field.Label.Props;
 }
-interface CreateTaskDialogProps extends DialogProps {}
-export const CreateTaskDialog = ({
-  isOpen,
-  onClose,
-  ...props
-}: CreateTaskDialogProps) => {
-  const { data: sessionData } = authClient.useSession();
-  const createTaskDialogRef = useRef<HTMLDialogElement>(null);
+const BaseField = ({
+  name,
+  label,
+  controlProps,
+  labelProps,
+}: BaseFieldProps) => {
+  return (
+    <Field.Root className={styles.field}>
+      <Field.Label className={styles.label} {...labelProps}>
+        {label}
+      </Field.Label>
+      <Field.Control
+        className={styles.input}
+        type="text"
+        name={name}
+        {...controlProps}
+      />
+      <Field.Error className={styles.error} />
+    </Field.Root>
+  );
+};
 
+interface CreateTaskDialogProps {
+  handle: Dialog.Handle<HTMLElement>;
+  task?: Task;
+}
+export const CreateTaskDialog = ({ handle }: CreateTaskDialogProps) => {
+  const createTaskDialogRef = useRef<HTMLDialogElement>(null);
+  const { data: sessionData } = authClient.useSession();
   if (!sessionData) {
     createTaskDialogRef.current?.hidePopover();
   }
-
   const createTaskFormRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
   const trpc = useTRPC();
-  const selectProjectRef = useRef<SelectInputHandle>(null);
-  const selectStatusRef = useRef<SelectInputHandle>(null);
   const tasksQueryKey = trpc.tasks.getTasks.queryKey();
-  const [, taskFormAction, taskPending] = useActionState(createTask, null);
-  const { data: projects } = useSuspenseQuery(
+  const [state, taskFormAction, taskPending] = useActionState(createTask, {});
+  const { data: projects, isLoading: isProjectsLoading } = useQuery(
     trpc.projects.getProjects.queryOptions(),
   );
+  const { data: statuses } = useQuery(trpc.status.getStatuses.queryOptions());
+  const selectProjectRef = useRef<SelectInputHandle>(null);
+  const selectStatusRef = useRef<SelectInputHandle>(null);
+
+  useEffect(() => {
+    if (!taskPending) {
+      handle.close();
+      queryClient.invalidateQueries({ queryKey: tasksQueryKey });
+    }
+  }, [taskPending]);
+
+  return (
+    <Dialog.Root handle={handle}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.backdrop} />
+        <Dialog.Popup className={styles.popup}>
+          <Form
+            action={taskFormAction}
+            ref={createTaskFormRef}
+            className={styles.form}
+            errors={state.errors}
+            // onSubmit={(e: SubmitEvent) => {
+            //   e.preventDefault();
+            // }}
+          >
+            <Fieldset.Root className={styles.fieldset}>
+              {state.formError ? (
+                <div className={styles.error}>{state.formError}</div>
+              ) : null}
+              <Fieldset.Legend className={styles.legend}>
+                new task
+              </Fieldset.Legend>
+              <BaseField
+                name="title"
+                label="Title"
+                controlProps={{ required: true }}
+              />
+              <BaseField name="description" label="Description" />
+              <Field.Root className={styles.field}>
+                <Field.Label className={styles.label}>Project</Field.Label>
+                <Select
+                  id="create-task-project"
+                  ref={selectProjectRef}
+                  placeholder="Select a project"
+                  loading={isProjectsLoading}
+                  name="projectId"
+                  options={
+                    projects?.map((project) => ({
+                      value: project.id,
+                      label: project.title,
+                    })) || []
+                  }
+                />
+                <Field.Error className={styles.error} />
+              </Field.Root>
+              <Field.Root className={styles.field}>
+                <Field.Label className={styles.label}>Status</Field.Label>
+                <Select
+                  id="create-task-status"
+                  ref={selectStatusRef}
+                  placeholder="Select a status"
+                  name="statusId"
+                  options={
+                    statuses?.map((status) => ({
+                      value: status.id,
+                      label: status.name,
+                    })) || []
+                  }
+                />
+                <Field.Error className={styles.error} />
+              </Field.Root>
+            </Fieldset.Root>
+            <Button disabled={taskPending} type="submit">
+              submit
+            </Button>
+          </Form>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+};
+
+interface EditTaskDialogProps {
+  handle: Dialog.Handle<HTMLElement>;
+  task?: Task;
+}
+export const EditTaskDialog = ({ handle, task }: EditTaskDialogProps) => {
+  const editTaskFormRef = useRef<HTMLFormElement>(null);
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+  const tasksQueryKey = trpc.tasks.getTasks.queryKey();
+  const updateTaskWithId = updateTask.bind(null, task?.id || "");
+  const [state, taskFormAction, taskPending] = useActionState(
+    updateTaskWithId,
+    { taskId: task?.id || "" },
+  );
+  const { data: projects, isLoading: isProjectsLoading } = useQuery(
+    trpc.projects.getProjects.queryOptions(),
+  );
+  const { data: statuses } = useQuery(trpc.status.getStatuses.queryOptions());
+
+  return (
+    <Dialog.Root handle={handle}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.backdrop} />
+        <Dialog.Popup className={styles.popup}>
+          <Form action={taskFormAction} ref={editTaskFormRef}>
+            <Fieldset.Root className={styles.fieldset}>
+              <Fieldset.Legend className={styles.legend}>
+                edit task
+              </Fieldset.Legend>
+              <BaseField
+                name="title"
+                label="Title"
+                controlProps={{ defaultValue: task?.title }}
+              />
+              <BaseField
+                name="description"
+                label="Description"
+                controlProps={{ defaultValue: task?.description }}
+              />
+            </Fieldset.Root>
+            <Button disabled={taskPending} type="submit">
+              submit
+            </Button>
+          </Form>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+};
+
+interface LoginDialogProps {
+  handle: Dialog.Handle<HTMLElement>;
+}
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-z]/, "Password must contain a lowercase letter")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[0-9]/, "Password must contain a number");
+// .regex(/[^A-Za-z0-9]/, "Password must contain a special character");
+const loginActionSchema = z.object({
+  email: z.email(),
+  password: passwordSchema,
+});
+export const LoginDialog = ({ handle }: LoginDialogProps) => {
+  const [open, setOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string[]>>();
+  const onLoginFormSubmit = (formValues: Form.Values) => {
+    const { data, error, success } = loginActionSchema.safeParse(formValues);
+    if (!success) {
+      setErrors(z.flattenError(error).fieldErrors);
+      return {
+        errors: z.flattenError(error).fieldErrors,
+      };
+    }
+    try {
+      authClient.signIn.email({
+        email: data.email,
+        password: data.password,
+      });
+    } catch (e) {
+      console.log({ e });
+    } finally {
+      setOpen(false);
+    }
+  };
+  return (
+    <Dialog.Root handle={handle} open={open} onOpenChange={setOpen}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.backdrop} />
+        <Dialog.Popup className={styles.popup}>
+          <Form
+            errors={errors}
+            className={styles.form}
+            onFormSubmit={onLoginFormSubmit}
+          >
+            <Fieldset.Root className={styles.fieldset}>
+              <Fieldset.Legend className={styles.legend}>login</Fieldset.Legend>
+              <BaseField
+                name="email"
+                label="email"
+                controlProps={{
+                  type: "email",
+                }}
+              />
+              <BaseField
+                name="password"
+                label="password"
+                controlProps={{ type: "password" }}
+              />
+            </Fieldset.Root>
+            <Button type="submit">submit</Button>
+          </Form>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+};
+
+interface CreateProjectDialogProps {
+  handle: Dialog.Handle<HTMLElement>;
+}
+
+export const CreateProjectDialog = ({ handle }: CreateProjectDialogProps) => {
+  const [state, createProjectAction, projectPending] = useActionState(
+    createProject,
+    {},
+  );
+
+  useEffect(() => {
+    if (!projectPending) {
+      handle.close();
+    }
+  }, [projectPending]);
+
+  return (
+    <Dialog.Root handle={handle}>
+      <Dialog.Portal>
+        <Dialog.Backdrop className={styles.backdrop} />
+        <Dialog.Popup className={styles.popup}>
+          <Form
+            className={styles.form}
+            action={createProjectAction}
+            errors={state.errors}
+          >
+            <Fieldset.Root className={styles.fieldset}>
+              <Fieldset.Legend className={styles.legend}>
+                create project
+              </Fieldset.Legend>
+
+              <BaseField
+                label="Title"
+                name="title"
+                controlProps={{ required: true }}
+              />
+
+              <BaseField label="Description" name="description" />
+              {state.formError ? (
+                <div className={styles.error}>{state.formError}</div>
+              ) : null}
+            </Fieldset.Root>
+            <Button type="submit" disabled={projectPending}>
+              {projectPending ? <Spinner /> : "submit"}
+            </Button>
+          </Form>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+};
+
+interface TaskDialogHandleProps {
+  taskId: string;
+  mode?: "view" | "edit";
+  setMode?: (mode: "view" | "edit") => void;
+  setHeight?: (height: number) => void;
+  ref: React.RefObject<HTMLDivElement | null>;
+}
+interface TaskDialogProps {
+  handle: Dialog.Handle<TaskDialogHandleProps>;
+}
+
+const ViewTaskDetails = ({
+  taskId,
+  setHeight,
+  setMode,
+  ref,
+}: TaskDialogHandleProps) => {
+  const trpc = useTRPC();
+  const { data: task } = useSuspenseQuery(
+    trpc.tasks.getTask.queryOptions({ taskId }),
+  );
+  useEffect(() => {
+    const el = document.getElementById("view_task_details");
+    setHeight?.(el?.getBoundingClientRect().height || 0);
+  }, []);
+  return (
+    <div
+      id="view_task_details"
+      className={c(styles.view_task_dialog, styles.change_transition)}
+      ref={ref}
+    >
+      <header className={styles.header}>
+        <Dialog.Title>{task.title}</Dialog.Title>
+
+        <div className={styles.buttons}>
+          <button
+            className={styles.edit_button}
+            onClick={() => setMode?.("edit")}
+          >
+            <EditIcon size={18} />
+          </button>
+          <Dialog.Close className={styles.close_button}>
+            <XIcon size={22} />
+          </Dialog.Close>
+        </div>
+      </header>
+      <main className={styles.main}>
+        <p>{task.description}</p>
+      </main>
+      <footer className={styles.footer}>
+        <p className={styles.created}>
+          created {task.createdAt.toLocaleString()}
+        </p>
+        <p className={styles.updated}>
+          updated {task.updatedAt.toLocaleString()}
+        </p>
+      </footer>
+    </div>
+  );
+};
+
+const EditTaskDetails = ({
+  taskId,
+  setHeight,
+  setMode,
+  ref,
+}: TaskDialogHandleProps) => {
+  const trpc = useTRPC();
+  const { data: task } = useSuspenseQuery(
+    trpc.tasks.getTask.queryOptions({ taskId }),
+  );
+  const taskQueryKey = trpc.tasks.getTask.queryKey();
   const { data: statuses } = useSuspenseQuery(
     trpc.status.getStatuses.queryOptions(),
   );
-  return (
-    <Dialog
-      {...props}
-      isOpen={isOpen}
-      onClose={onClose!}
-      ref={createTaskDialogRef}
-    >
-      <Form
-        ref={createTaskFormRef}
-        onSubmit={() => {
-          selectProjectRef.current?.clear();
-          queryClient.invalidateQueries({
-            queryKey: tasksQueryKey,
-          });
-          createTaskDialogRef.current?.requestClose();
-        }}
-        action={taskFormAction}
-        className={styles.create_task_form}
-      >
-        <legend>new task</legend>
-        <label htmlFor="create-task-title">Title</label>
-        <input id="create-task-title" name="title" type="text" />
-        <label htmlFor="create-task-description">Description</label>
-        <textarea id="create-task-description" name="description" rows={3} />
-        <label htmlFor="create-task-project">Project</label>
-        <Select
-          id="create-task-project"
-          name="projectId"
-          ref={selectProjectRef}
-          options={projects.map((proj, index) => ({
-            label: proj.title,
-            value: proj.id,
-            default: index === 0,
-          }))}
-        />
-        <label htmlFor="create-task-status">Status</label>
-        <Select
-          id="create-task-status"
-          name="statusId"
-          ref={selectStatusRef}
-          options={statuses.map((status, index) => ({
-            label: status.name,
-            value: status.id,
-            default: status.default ?? index === 0,
-          }))}
-        />
-        <Button disabled={taskPending} type="submit">
-          submit
-        </Button>
-      </Form>
-    </Dialog>
+  const { data: projects } = useSuspenseQuery(
+    trpc.projects.getProjects.queryOptions(),
   );
-};
-
-interface ViewTaskDialogProps extends DialogProps {}
-export const ViewTaskDialog = ({ isOpen, ...props }: ViewTaskDialogProps) => {
-  const ref = useRef<HTMLDialogElement>(null);
+  const editTaskFormRef = useRef<HTMLFormElement>(null);
   const queryClient = useQueryClient();
-  const trpc = useTRPC();
-  const taskQueryKey = trpc.tasks.getTask.queryKey();
   const tasksQueryKey = trpc.tasks.getTasks.queryKey();
-  const { openModal, closeModal, modalData } = useDialogs();
-  const taskId = modalData.taskId;
-
-  const { data: sessionData } = authClient.useSession();
-
-  const { data: task } = useQuery(
-    trpc.tasks.getTask.queryOptions(
-      {
-        taskId: taskId,
-      },
-      {
-        enabled: !!taskId && isOpen,
-        placeholderData: () => {
-          const cacheTasks = queryClient.getQueryData(tasksQueryKey);
-          const found = cacheTasks?.find((t) => t.id === taskId);
-          if (found) return found;
-        },
-      },
-    ),
+  const updateTaskWithId = updateTask.bind(null, task?.id || "");
+  const [state, taskFormAction, updateTaskPending] = useActionState(
+    updateTaskWithId,
+    { taskId: task?.id || "" },
   );
-  const { data: statuses } = useSuspenseQuery(
-    trpc.status.getStatuses.queryOptions(undefined, {
-      enabled: !!task,
-    }),
-  );
-
-  const [statusOpts, setStatusOpts] = useState<SelectOption[]>([]);
-
-  const statusesKey = trpc.status.getStatuses.queryKey();
-  const updateTaskStatus = useMutation(
-    trpc.tasks.updateTaskStatus.mutationOptions({
-      onMutate: async ({ newStatusId }) => {
-        const prevData = queryClient.getQueryData(taskQueryKey);
-        queryClient.setQueryData(taskQueryKey, (old) => ({
-          ...old!,
-          statusId: newStatusId,
-        }));
-        return { prevData };
-      },
-      onError: async (_err, _newData, ctx) => {
-        queryClient.setQueryData(taskQueryKey, ctx!.prevData);
-      },
-      onSettled: async () => {
-        await queryClient.invalidateQueries({ queryKey: tasksQueryKey });
-        await queryClient.invalidateQueries({ queryKey: taskQueryKey });
-      },
-    }),
-  );
-
-  const deleteStatus = useMutation(
-    trpc.tasks.deleteTask.mutationOptions({
-      onSettled: async () => {
-        await queryClient.invalidateQueries({ queryKey: tasksQueryKey });
-        await queryClient.invalidateQueries({ queryKey: taskQueryKey });
-      },
-    }),
-  );
-
   useEffect(() => {
-    if (task?.statusId) {
-      queryClient.invalidateQueries({ queryKey: statusesKey });
-      setStatusOpts(
-        statuses?.map((status, index) => ({
-          label: status.name,
-          value: status.id,
-          default: status.default ?? index === 0,
-          // default: task?.statusId === status.id,
-        })) ?? [],
-      );
+    const el = document.getElementById("edit_task_details");
+    setHeight?.(el?.getBoundingClientRect().height || 0);
+    if (!updateTaskPending) {
+      queryClient.invalidateQueries({
+        queryKey: taskQueryKey,
+      });
+      queryClient.invalidateQueries({
+        queryKey: tasksQueryKey,
+      });
     }
-    if (taskId) {
-      ref.current?.showModal();
-    } else {
-      ref.current?.requestClose();
-    }
-
-    return () => ref.current?.close();
-  }, [task?.statusId, taskId]);
+    return () => {
+      setMode?.("view");
+    };
+  }, [setMode, updateTaskPending]);
 
   return (
-    <Dialog
-      {...props}
-      isOpen={isOpen}
-      onClose={closeModal!}
-      ref={ref as RefObject<HTMLDialogElement>}
-      id={`task_dialog_${taskId}`}
+    <div
+      id="edit_task_details"
+      className={c(styles.edit_task_dialog, styles.change_transition)}
+      ref={ref}
     >
-      <header>
-        <h2>{task?.title}</h2>
-        {task?.userId === sessionData?.user.id ? (
-          <>
-            <Select
-              onValueChange={async (newVal) => {
-                await updateTaskStatus.mutateAsync({
-                  taskId: taskId,
-                  newStatusId: newVal[0],
-                });
-              }}
-              options={statusOpts ?? []}
-            />
-            <button
-              onClick={() => {
-                openModal("EDIT_TASK", {
-                  taskId: taskId,
-                });
-              }}
-            >
-              <PencilIcon />
-            </button>
-            <button
-              onClick={() => {
-                deleteStatus.mutate({ taskId: taskId });
-                ref.current?.requestClose();
-              }}
-            >
-              <TrashIcon />
-            </button>
-          </>
-        ) : null}
+      <header className={styles.header}>
+        <Dialog.Title>edit task</Dialog.Title>
+
+        <div className={styles.buttons}>
+          <button
+            className={styles.back_button}
+            onClick={() => setMode?.("view")}
+          >
+            <ArrowLeftIcon size={22} />
+          </button>
+          <Dialog.Close className={styles.close_button}>
+            <XIcon size={22} />
+          </Dialog.Close>
+        </div>
       </header>
-      <hr />
-      <main>
-        <p>{task?.description}</p>
-      </main>
-      <footer>
-        <p>updated {task?.updatedAt.toLocaleDateString()}</p>
-      </footer>
-    </Dialog>
-  );
-};
-
-interface UpdateTaskDialogProps extends DialogProps {}
-export const UpdateTaskDialog = ({ ...props }: UpdateTaskDialogProps) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-  const updateTaskDialogRef = useRef<HTMLDialogElement>(null);
-  const { data: sessionData } = authClient.useSession();
-
-  if (!sessionData) {
-    updateTaskDialogRef.current?.hidePopover();
-  }
-  const updateTaskFormRef = useRef<HTMLFormElement>(null);
-
-  const { modalData } = useDialogs();
-  const updateTaskWithTaskId = updateTask.bind(null, modalData.taskId);
-  const [, taskFormAction, taskPending] = useActionState(
-    updateTaskWithTaskId,
-    null,
-  );
-
-  const { data: task } = useQuery(
-    trpc.tasks.getTask.queryOptions(
-      { taskId: modalData.taskId },
-      { enabled: !!modalData.taskId },
-    ),
-  );
-
-  return (
-    <Dialog {...props} ref={updateTaskDialogRef}>
       <Form
-        ref={updateTaskFormRef}
-        onSubmit={() => {
-          queryClient.invalidateQueries({
-            queryKey: trpc.tasks.getTask.queryKey({
-              taskId: modalData.taskId,
-            }),
-          });
-          queryClient.invalidateQueries({
-            queryKey: trpc.tasks.getTasks.queryKey(),
-          });
-        }}
+        className={styles.form}
         action={taskFormAction}
+        ref={editTaskFormRef}
       >
-        <label htmlFor="update_task_title">Title</label>
-        <input
-          type="text"
-          name="title"
-          defaultValue={task?.title}
-          id="update_task_title"
-        />
-        <label htmlFor="update_task_description">Description</label>
-        <textarea
-          name="description"
-          defaultValue={task?.description}
-          id="update_task_description"
-        />
-        <button type="submit" disabled={taskPending}>
-          {taskPending ? "Saving..." : "Save"}
-        </button>
-      </Form>
-    </Dialog>
-  );
-};
-
-interface CreateStatusProps extends DialogProps {}
-export const CreateStatusDialog = ({ ...props }: CreateStatusProps) => {
-  const trpc = useTRPC();
-  const queryClient = useQueryClient();
-
-  const createStatusDialogRef = useRef<HTMLDialogElement>(null);
-  const { data: sessionData } = authClient.useSession();
-
-  if (!sessionData) {
-    createStatusDialogRef.current?.hidePopover();
-  }
-
-  const [, statusFormAction, statusPending] = useActionState(
-    createStatus,
-    null,
-  );
-  const createStatusFormRef = useRef<HTMLFormElement>(null);
-  const [statusFormColorHex, setStatusFormColorHex] = useState<string>(
-    Colors.blue,
-  );
-
-  const mounted = useMounted();
-
-  const statusQueryKey = trpc.status.getStatuses.queryKey();
-  return (
-    <Dialog {...props} ref={createStatusDialogRef}>
-      <Form
-        ref={createStatusFormRef}
-        onSubmit={() => {
-          queryClient.invalidateQueries({
-            queryKey: statusQueryKey,
-          });
-          createStatusDialogRef.current?.requestClose();
-        }}
-        action={statusFormAction}
-        className={styles.create_status_form}
-      >
-        <legend>new status</legend>
-        <label htmlFor="create-status-name">Name</label>
-        <input id="create-status-name" name="name" type="text" />
-        <label htmlFor="create-status-default">Default</label>
-        <input type="checkbox" id="create-status-default" name="default" />
-        <label htmlFor="create-status-color">Color</label>
-        {mounted ? (
-          <>
-            <Sketch
-              color={statusFormColorHex}
-              onChange={(color) => setStatusFormColorHex(color.hex)}
+        <Fieldset.Root className={styles.fieldset}>
+          {/* <Fieldset.Legend className={styles.legend}>edit task</Fieldset.Legend> */}
+          <BaseField
+            name="title"
+            label="Title"
+            controlProps={{
+              defaultValue: task.title,
+              disabled: updateTaskPending,
+            }}
+          />
+          <BaseField
+            name="description"
+            label="Description"
+            controlProps={{
+              defaultValue: task.description,
+              disabled: updateTaskPending,
+            }}
+          />
+          <Field.Root className={styles.field}>
+            <Field.Label className={styles.label}>Status</Field.Label>
+            <Select
+              id="edit-task-status"
+              name="statusId"
+              defaultValue={task.statusId ?? ""}
+              aria-disabled={updateTaskPending}
+              options={statuses.map((status) => ({
+                value: status.id,
+                label: status.name,
+              }))}
             />
-            <input name="color" value={statusFormColorHex} type="hidden" />
-          </>
-        ) : null}
-        <Button disabled={statusPending} type="submit">
-          submit
-        </Button>
+          </Field.Root>
+          <Button type="submit" disabled={updateTaskPending}>
+            submit
+          </Button>
+        </Fieldset.Root>
       </Form>
-    </Dialog>
+    </div>
   );
 };
 
-interface UpdateStatusDialogProps extends CreateStatusProps {}
-export const UpdateStatusDialog = ({ ...props }: UpdateStatusDialogProps) => {
-  const trpc = useTRPC();
+const TaskLoading = () => {
+  const shimmerStyle = c(componentStyles.shimmer, componentStyles.text_line);
+  return (
+    <div className={styles.change_transition}>
+      <Dialog.Title className={shimmerStyle} style={{ width: "80%" }} />
+      <div>
+        <p
+          className={shimmerStyle}
+          style={{ width: "70%", height: "0.8rem" }}
+        />
+        <p
+          className={shimmerStyle}
+          style={{ width: "70%", height: "0.8rem" }}
+        />
+      </div>
+    </div>
+  );
+};
 
-  const updateStatusDialogRef = useRef<HTMLDialogElement>(null);
-  const queryClient = useQueryClient();
-  const statusesQueryKey = trpc.status.getStatuses.queryKey();
-  const { modalData } = useDialogs();
+export const TaskDialog = ({ handle }: TaskDialogProps) => {
+  const [mode, setMode] = useState<"view" | "edit">("view");
+  const [height, setHeight] = useState<number>();
 
-  const statusId = modalData.statusId;
+  const [updateFunc, setUpdateFunc] = useState<(() => void) | null>(null);
 
-  const { data: status } = useQuery(
-    trpc.status.getStatus.queryOptions(
-      {
-        statusId: statusId,
-      },
-      {
-        enabled: !!statusId,
-        placeholderData: () => {
-          const statuses = queryClient.getQueryData(statusesQueryKey);
-          const foundStatus = statuses?.find((s) => s.id === statusId);
-          if (foundStatus) {
-            return { ...foundStatus, tasks: [] };
+  const viewRef = useRef<HTMLDivElement>(null);
+  const editRef = useRef<HTMLDivElement>(null);
+
+  const refs = {
+    view: viewRef,
+    edit: editRef,
+  };
+  const [open, setOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    if (!mode || !open) return;
+    const el = refs[mode].current;
+    console.log({ el });
+    if (!el) return;
+    const updateHeight = () => {
+      const newHeight = el?.getBoundingClientRect().height;
+      // if (newHeight === height || newHeight === 0) return;
+      setHeight(newHeight);
+    };
+    setUpdateFunc(updateHeight);
+    updateHeight();
+
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(el);
+    return () => {
+      resizeObserver.disconnect();
+      setHeight(undefined);
+      // setUpdateFunc(null);
+    };
+  }, [mode, open, refs]);
+  return (
+    <Dialog.Root
+      handle={handle}
+      onOpenChange={(open) => {
+        // const el = document.querySelector(`#${mode}_task_details`);
+        // const elHeight = el?.getBoundingClientRect().height;
+        setOpen(open);
+        // setHeight(elHeight);
+      }}
+      open={open}
+    >
+      {({ payload }) => {
+        useEffect(() => {
+          if (payload?.mode && payload.mode !== mode) {
+            setMode(payload.mode);
           }
-        },
-      },
-    ),
-  );
-  const [statusColor, setStatusColor] = useState(status?.color ?? "");
-  const updateStatusWithId = updateStatus.bind(null, statusId);
-  const [, updateStatusAction, updateStatusPending] = useActionState(
-    updateStatusWithId,
-    null,
-  );
-
-  const [showColor, setShowColor] = useState(false);
-
-  useEffect(() => {
-    if (!showColor) {
-      setShowColor(true);
-    }
-    setStatusColor(status?.color!);
-  }, [statusId]);
-
-  useEffect(() => {
-    if (showColor) {
-      setStatusColor(status?.color!);
-    }
-  }, [showColor]);
-
-  const statusKey = trpc.status.getStatus.queryKey({
-    statusId,
-  });
-  const statusesKey = trpc.status.getStatuses.queryKey();
-  return (
-    <Dialog {...props} ref={updateStatusDialogRef}>
-      <Form
-        action={updateStatusAction}
-        onSubmit={() => {
-          queryClient.invalidateQueries({ queryKey: statusKey });
-          queryClient.invalidateQueries({ queryKey: statusesKey });
-          updateStatusDialogRef.current?.requestClose();
-        }}
-      >
-        <legend>edit status</legend>
-        <label htmlFor="edit_status_name">name</label>
-        <input
-          id="edit_status_name"
-          type="text"
-          name="name"
-          defaultValue={status?.name}
-        />
-        <label htmlFor="edit_status_default">default</label>
-        <input
-          id="edit_status_name"
-          type="checkbox"
-          name="default"
-          defaultChecked={status?.default}
-        />
-        <label htmlFor="edit_status_color">color</label>
-        {showColor ? (
-          <>
-            <Sketch
-              color={`${statusColor}`}
-              onChange={(color) => setStatusColor(color.hex)}
-            />
-            <input type="hidden" name="color" value={statusColor ?? ""} />
-          </>
-        ) : null}
-        <Button type="submit" disabled={updateStatusPending}>
-          update
-        </Button>
-      </Form>
-    </Dialog>
-  );
-};
-
-interface CreateProjectDialogProps extends DialogProps {}
-
-export const CreateProjectDialog = ({ ...props }: CreateProjectDialogProps) => {
-  const createProjectDialogRef = useRef<HTMLDialogElement>(null);
-  const [, formAction, pending] = useActionState(createProject, null);
-
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-  const projectsKey = trpc.projects.getProjects.queryKey();
-
-  const { data: sessionData } = authClient.useSession();
-
-  if (!sessionData) {
-    createProjectDialogRef.current?.hidePopover();
-  }
-
-  return (
-    <Dialog {...props} ref={createProjectDialogRef}>
-      <Form
-        action={formAction}
-        onSubmit={() => {
-          queryClient.invalidateQueries({ queryKey: projectsKey });
-          createProjectDialogRef.current?.requestClose();
-        }}
-      >
-        <legend>create project</legend>
-        <label htmlFor="create_project_title">Title</label>
-        <input type="text" id="create_project_title" name="title" />
-        <label htmlFor="create_project_description">description</label>
-        <textarea id="create_project_description" name="description" />
-        <Button type="submit" disabled={pending}>
-          submit
-        </Button>
-      </Form>
-    </Dialog>
-  );
-};
-
-interface LoginDialogProps extends DialogProps {}
-export const LoginDialog = ({ ...props }: LoginDialogProps) => {
-  const [loginStatus, loginAction, formPending] = useActionState(signIn, null);
-  const { refetch, data: sessionData } = authClient.useSession();
-  const loginDialogRef = useRef<HTMLDialogElement>(null);
-  const router = useRouter();
-  useEffect(() => {
-    if (sessionData) {
-      loginDialogRef.current?.requestClose();
-    } else if (loginStatus?.message === "success") {
-      refetch();
-      router.refresh();
-    }
-  }, [sessionData, loginStatus]);
-  return (
-    <Dialog {...props} ref={loginDialogRef}>
-      <Form action={loginAction}>
-        <label htmlFor="loginEmail">Email</label>
-        <input id="loginEmail" type="email" name="email" />
-        <label htmlFor="loginPassword">Password</label>
-        <input id="loginPassword" type="password" name="password" />
-        <Button color="purple" disabled={formPending} type="submit">
-          Login
-        </Button>
-      </Form>
-    </Dialog>
+          // updateFunc?.();
+        }, [payload]);
+        return (
+          <Dialog.Portal>
+            <Dialog.Backdrop className={styles.backdrop} />
+            <Dialog.Popup className={styles.popup}>
+              <div
+                className={styles.popup_inner}
+                style={{
+                  height: height,
+                }}
+              >
+                {payload ? (
+                  <Suspense fallback={<TaskLoading />}>
+                    <div
+                      className={c(
+                        styles.auto_height_child,
+                        styles.view,
+                        mode === "view" ? null : styles.hidden,
+                      )}
+                    >
+                      <ViewTaskDetails
+                        taskId={payload.taskId}
+                        mode={mode}
+                        ref={viewRef}
+                        setMode={setMode}
+                        setHeight={setHeight}
+                      />
+                    </div>
+                    <div
+                      className={c(
+                        styles.auto_height_child,
+                        styles.edit,
+                        mode === "edit" ? null : styles.hidden,
+                      )}
+                    >
+                      <EditTaskDetails
+                        taskId={payload.taskId}
+                        ref={editRef}
+                        mode={mode}
+                        setMode={setMode}
+                        setHeight={setHeight}
+                      />
+                    </div>
+                  </Suspense>
+                ) : (
+                  <TaskLoading />
+                )}
+              </div>
+            </Dialog.Popup>
+          </Dialog.Portal>
+        );
+      }}
+    </Dialog.Root>
   );
 };

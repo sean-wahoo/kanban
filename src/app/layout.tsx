@@ -4,7 +4,7 @@ import "./globals.scss";
 import { TRPCReactProvider } from "@/trpc/client";
 import Header from "./_components/header";
 import Footer from "./_components/footer";
-import { DialogManager, DialogProvider } from "@/components/dialog";
+import ContextWrapper from "@/context/wrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,21 +32,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <TRPCReactProvider>
-      <html
-        lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
-      >
-        <body>
-          <DialogProvider>
-            <Header />
-            {children}
-            <Footer />
-            <div id="dialog_root"></div>
-            <DialogManager />
-          </DialogProvider>
-        </body>
-      </html>
-    </TRPCReactProvider>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${vt323Mono.variable} h-full antialiased`}
+    >
+      <body>
+        <TRPCReactProvider>
+          <ContextWrapper>
+            <div className="root">
+              <Header />
+              {children}
+              <Footer />
+            </div>
+            {/* <DialogManager /> */}
+          </ContextWrapper>
+        </TRPCReactProvider>
+      </body>
+    </html>
   );
 }

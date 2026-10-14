@@ -11,6 +11,7 @@ import {
 import styles from "./styles.module.scss";
 import { c } from "@/lib/utils/client";
 import { useMounted } from "@/lib/hooks";
+import { Menu } from "@base-ui/react";
 
 export type DropdownOption = ComponentProps<"li"> &
   ComponentProps<"button"> & {
@@ -117,4 +118,39 @@ const Dropdown = ({
     </ul>
   );
 };
-export default Dropdown;
+
+interface NewDropdownProps extends ComponentProps<"ul"> {
+  options: DropdownOption[];
+  handle?: Menu.Handle<HTMLElement>;
+}
+const NewDropdown = ({ options, handle, ...props }: NewDropdownProps) => {
+  if (!handle) {
+    handle = Menu.createHandle<HTMLElement>();
+  }
+  return (
+    <Menu.Root handle={handle} modal={false}>
+      <Menu.Portal className={""}>
+        <Menu.Positioner sideOffset={2} className={styles.dropdown_positioner}>
+          <Menu.Popup className={styles.dropdown_popup}>
+            {options.map(({ item, onClick, id }) => {
+              return (
+                <Menu.Item
+                  className={styles.dropdown_item}
+                  key={`dropdown-${id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onClick?.(e);
+                  }}
+                >
+                  {item}
+                </Menu.Item>
+              );
+            })}
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+};
+
+export default NewDropdown;

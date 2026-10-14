@@ -29,3 +29,10 @@ $random: (
   "4": #0c7c59,
   "5": #33658a,
 );
+
+$border_color: shades($bg, lighten, 10);
+$input_bg: shades($bg, lighten, 4);
+$raised_bg: shades($bg, lighten, 2);
+
+$column_bg: shades($bg, lighten, 0.5);
+$column_border: shades($bg, lighten, 4);

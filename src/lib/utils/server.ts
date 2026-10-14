@@ -34,3 +34,5 @@ export async function assertAuth() {
   if (!session) throw new Error("Unauthorized");
   return session;
 }
+export const sleep = async (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));

@@ -1,68 +1,56 @@
 "use client";
 
-import { useTRPC } from "@/trpc/client";
+import { RouterOutput, useTRPC } from "@/trpc/client";
 import { PencilIcon, XIcon } from "lucide-react";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { ComponentProps, useRef } from "react";
+import { ComponentProps, useId, useRef } from "react";
 import styles from "./styles.module.scss";
 import { useSortable } from "@dnd-kit/react/sortable";
-import { useDialogs } from "@/components/dialog";
 import { authClient } from "@/lib/auth-client";
 import { useMounted } from "@/lib/hooks";
-import Task from "./task";
-import type { Task as TaskType } from "../../../generated/prisma/client";
+import Task, { TaskLoading } from "./task";
 import { Colors } from "@/lib/utils/shared";
+import { c } from "@/lib/utils/client";
 
 interface StatusColumnProps extends ComponentProps<"div"> {
-  statusId: string;
   index: number;
-  tasks: TaskType[];
+  status: RouterOutput["status"]["getStatus"];
+  loading?: boolean;
 }
 const StatusColumn = ({
-  statusId,
   index,
+  status,
+  loading = false,
   children,
-  tasks,
   ...props
 }: StatusColumnProps) => {
   const { data: sessionData } = authClient.useSession();
   const updateStatusDialogRef = useRef<HTMLDialogElement>(null);
   const trpc = useTRPC();
   const statusKey = trpc.status.getStatus.queryKey({
-    statusId,
+    statusId: status.id,
   });
   const statusesKey = trpc.status.getStatuses.queryKey();
 
   const queryClient = useQueryClient();
-  const { data: status } = useSuspenseQuery(
-    trpc.status.getStatus.queryOptions(
-      { statusId },
-      {
-        placeholderData: () => {
-          const cachedStatuses = queryClient.getQueryData(statusesKey);
-          const found = cachedStatuses?.find((c) => c.id === statusId);
-          if (found) return { ...found, tasks: [] };
-        },
-      },
-    ),
+  const { data: tasks, status: tasksStatus } = useSuspenseQuery(
+    trpc.tasks.getTasks.queryOptions(),
   );
 
   const isUserStatus = status.userId === sessionData?.user.id;
   const { ref: columnSlotRef } = useSortable({
-    id: `column_${statusId}`,
+    id: `column_${status.id}`,
     index,
     disabled: !isUserStatus || updateStatusDialogRef.current?.open,
     data: {
       type: "COLUMN",
-      statusId,
+      statusId: status.id,
     },
   });
-
-  const { openModal } = useDialogs();
 
   const deleteStatusMutation = useMutation(
     trpc.status.deleteStatus.mutationOptions({
@@ -74,10 +62,11 @@ const StatusColumn = ({
   );
 
   const mounted = useMounted();
+
   return (
     <div
       {...props}
-      id={`status_column_${statusId}`}
+      id={`status_column_${status.id}`}
       className={styles.status_column}
       ref={columnSlotRef}
       style={{
@@ -90,7 +79,7 @@ const StatusColumn = ({
           <button
             className={styles.edit}
             onClick={() => {
-              openModal("EDIT_STATUS", { statusId: statusId });
+              // openModal("EDIT_STATUS", { statusId: status.id });
             }}
           >
             <PencilIcon />
@@ -99,7 +88,7 @@ const StatusColumn = ({
             className={styles.delete}
             onClick={() => {
               deleteStatusMutation.mutateAsync({
-                statusId: statusId,
+                statusId: status.id,
               });
             }}
           >
@@ -109,17 +98,40 @@ const StatusColumn = ({
       ) : null}
       <header style={{ borderColor: status?.color! }}>{status?.name}</header>
       <main>
-        {tasks?.map((task, i) => (
-          <Task
-            color={status?.color as Colors}
-            task={task}
-            taskId={task.id}
-            index={i}
-            key={task.id}
-          />
+        {tasksStatus === "success"
+          ? tasks
+              .filter((task) => task.statusId === status.id)
+              .map((task, i) => (
+                <Task
+                  color={status?.color as Colors}
+                  task={task}
+                  taskId={task.id}
+                  index={i}
+                  key={task.id}
+                />
+              ))
+          : Array.from({ length: 3 }).map((_, i) => (
+              <TaskLoading key={`task_loading_${i}`} />
+            ))}
+      </main>
+    </div>
+  );
+};
+
+export const ColumnLoading = () => {
+  const id = useId();
+  return (
+    <div className={styles.status_column}>
+      <header>
+        <div className={c(styles.shimmer, styles.text_line)} />
+      </header>
+      <main>
+        {Array({ length: 3 }).map((_, i) => (
+          <TaskLoading key={`task_loading_${id}_${i}`} />
         ))}
       </main>
     </div>
   );
 };
+
 export default StatusColumn;
