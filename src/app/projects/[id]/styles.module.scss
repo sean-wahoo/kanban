@@ -1,0 +1,227 @@
+@use "@/styling/colors.scss" as c;
+@use "@/styling/mixins.scss" as m;
+
+a.back {
+  display: inline-block;
+  font-size: var(--step--1);
+  opacity: 0.6;
+  text-decoration: none;
+  color: c.$fg;
+
+  &:hover {
+    opacity: 1;
+    text-decoration: underline;
+  }
+}
+
+h2.tasks_heading {
+  font-size: var(--step-0);
+  font-weight: 500;
+}
+
+div.details {
+  border: 1px solid c.$column_border;
+  background-color: c.$column_bg;
+  padding: 0.8rem;
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.8rem;
+  font-size: var(--step--1);
+}
+
+p.description {
+  margin: 0;
+  opacity: 0.8;
+  overflow-wrap: anywhere;
+}
+
+dl.info_grid {
+  margin: 0;
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.6rem 1.6rem;
+}
+
+div.info_item {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.15rem;
+
+  dt {
+    font-size: var(--step--2);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.7;
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+div.chips {
+  display: flex;
+  flex-flow: row wrap;
+  gap: 0.4rem;
+}
+
+span.chip {
+  display: inline-flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.5rem;
+  font-size: var(--step--2);
+  background-color: c.$raised_bg;
+  border: 1px solid c.$column_border;
+  border-radius: 4px;
+}
+
+span.status_dot {
+  flex: 0 0 auto;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  background-color: var(--status-color, c.$blue);
+}
+
+td.status_cell {
+  display: table-cell;
+  max-width: 12rem;
+}
+
+div.skeleton_back {
+  width: 5rem;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_title {
+  width: 10rem;
+  height: 1.6rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+span.skeleton_avatar {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  @include m.shimmer;
+}
+
+div.skeleton_name {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_description {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.3rem;
+}
+
+div.skeleton_text_line {
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_text_line_short {
+  width: 40%;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+dt.skeleton_info_label {
+  width: 3.5rem;
+  height: 0.7rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+dd.skeleton_info_value {
+  margin: 0;
+  width: 5.5rem;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+span.skeleton_dot {
+  flex: 0 0 auto;
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 50%;
+  @include m.shimmer;
+}
+
+span.skeleton_chip_line {
+  width: 3rem;
+  height: 0.8rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_tasks_heading {
+  width: 3.5rem;
+  height: 1.2rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_row {
+  display: grid;
+  grid-template-columns: 40fr 12fr 24fr 24fr;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid c.$column_border;
+
+  &:first-child {
+    background-color: c.$raised_bg;
+    padding-block: 0.3rem;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+div.skeleton_cell {
+  overflow: hidden;
+}
+
+div.skeleton_cell_project {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.15rem;
+  padding-block: 0.3rem;
+}
+
+div.skeleton_line {
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_line_short {
+  width: 60%;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_header_line {
+  width: 3.5rem;
+  height: 0.7rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
