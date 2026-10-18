@@ -2,7 +2,7 @@
 import "dotenv/config";
 import { auth } from "@/lib/auth";
 import { db } from "@/server/db";
-import { statuses, user as users } from "@/server/db";
+import { projects, statuses, user as users } from "@/server/db";
 import { eq } from "drizzle-orm";
 import { Colors } from "@/lib/utils/shared";
 
@@ -67,6 +67,26 @@ async function main() {
           userId: adminUser.id,
         });
       }
+    }
+
+    const DEMO_LONG_DESCRIPTION_PROJECT = {
+      id: "DEMO_LONG_DESCRIPTION",
+      title: "dolor sit amet",
+      description:
+        "consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua — ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat, duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur, excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum, sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo",
+    };
+
+    const existingProject = await db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, DEMO_LONG_DESCRIPTION_PROJECT.id))
+      .limit(1);
+
+    if (!existingProject[0]) {
+      await db.insert(projects).values({
+        ...DEMO_LONG_DESCRIPTION_PROJECT,
+        userId: adminUser.id,
+      });
     }
   } catch (e) {
     console.error(`seeding error ${e}`);
