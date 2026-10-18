@@ -13,3 +13,17 @@ Before substantial work:
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
+
+<!-- BEGIN:project-stack -->
+## Project stack notes
+
+- Database: Drizzle ORM over libsql/Turso (no Prisma). Schema lives in
+  `src/server/db/schema.ts`, the client in `src/server/db/index.ts`, seed in
+  `drizzle/seed.ts`, and config in `drizzle.config.ts` (`dialect: "turso"`).
+  The better-auth tables are generated into `auth-schema.ts` at the repo root
+  (run `pnpm db:generate` after changing them). Generated migrations live in
+  `drizzle/migrations` and are intentionally gitignored.
+- UI: Base UI (`@base-ui/react`) powers the dialogs, dropdown and select
+  components. Task/project/login dialogs are driven by handle-based context in
+  `src/context/`.
+<!-- END:project-stack -->
