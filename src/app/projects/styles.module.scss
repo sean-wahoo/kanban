@@ -1,0 +1,338 @@
+@use "@/styling/colors.scss" as c;
+@use "@/styling/mixins.scss" as m;
+
+$projects_width: 56rem;
+
+main.main {
+  flex: 1 0 auto;
+  overflow-x: auto;
+  padding: 1rem 0.8rem;
+}
+
+div.container {
+  max-width: $projects_width;
+  margin-inline: auto;
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.8rem;
+}
+
+div.toolbar {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+h1.heading {
+  font-size: var(--step-1);
+  font-weight: 500;
+}
+
+div.search {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 0.4rem;
+  box-sizing: border-box;
+  padding: 0.25rem 0.6rem;
+  background-color: c.$input_bg;
+  border: 1px solid c.$column_border;
+  border-radius: 4px;
+  font-size: var(--step--1);
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: c.shades(c.$bg, lighten, 8);
+  }
+
+  >svg {
+    opacity: 0.6;
+    flex: 0 0 auto;
+  }
+
+  >input {
+    appearance: none;
+    background: none;
+    border: none;
+    outline: none;
+    color: c.$fg;
+    font: inherit;
+    width: 10rem;
+    max-width: 40vw;
+
+    &::placeholder {
+      opacity: 0.5;
+    }
+  }
+}
+
+p.empty,
+td.no_matches {
+  border: 1px dashed c.$column_border;
+  padding: 0.8rem;
+  text-align: center;
+  opacity: 0.6;
+  font-style: italic;
+}
+
+table.table {
+  box-sizing: border-box;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  max-width: $projects_width;
+  margin-inline: auto;
+  font-size: var(--step--1);
+  color: c.$fg;
+  background-color: c.$column_bg;
+  border: 1px solid c.$column_border;
+
+  th,
+  td {
+    box-sizing: border-box;
+    padding: 0.4rem 0.6rem;
+    text-align: left;
+    vertical-align: middle;
+    overflow: hidden;
+    border-bottom: 1px solid c.$column_border;
+  }
+
+  thead th {
+    background-color: c.$raised_bg;
+    font-size: var(--step--2);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    opacity: 0.75;
+    white-space: nowrap;
+    display: table-cell;
+    user-select: none;
+  }
+
+  th.sortable {
+    cursor: pointer;
+
+    .th_contents {
+      display: flex;
+      flex-flow: row nowrap;
+      align-items: center;
+      gap: 0.25rem;
+    }
+
+    &:hover,
+    &.active {
+      opacity: 1;
+    }
+  }
+
+  tbody tr {
+    &:hover {
+      background-color: c.$table_row_hover;
+    }
+
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+
+  td.project_cell {
+    max-width: 28rem;
+    padding-block: 0.3rem;
+
+    .project_title {
+      display: block;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .project_description {
+      display: block;
+      margin-top: 0.1rem;
+      font-size: var(--step--2);
+      opacity: 0.65;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  td.tasks_cell {
+    max-width: 8rem;
+  }
+
+  td.lead_cell {
+    display: table-cell;
+    max-width: 14rem;
+  }
+
+  td.time_cell {
+    max-width: 12rem;
+    opacity: 0.7;
+  }
+}
+
+div.table_wrap {
+  overflow-x: auto;
+}
+
+.lead_contents {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.lead_name {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background-color: c.$raised_bg;
+  border: 1px solid c.$column_border;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--step--2);
+}
+
+a.project_link {
+  color: inherit;
+  text-decoration: none;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.sort_icon {
+  flex: 0 0 auto;
+  opacity: 0.8;
+}
+
+div.skeleton {
+  border: 1px solid c.$column_border;
+  background-color: c.$column_bg;
+}
+
+div.skeleton_row {
+  display: grid;
+  grid-template-columns: 40fr 8fr 24fr 28fr;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid c.$column_border;
+
+  &:first-child {
+    background-color: c.$raised_bg;
+    padding-block: 0.3rem;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+div.skeleton_cell {
+  overflow: hidden;
+}
+
+div.skeleton_cell_project {
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 0.15rem;
+  padding-block: 0.3rem;
+}
+
+div.skeleton_line {
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_line_short {
+  width: 60%;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_header_line {
+  width: 3.5rem;
+  height: 0.7rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_heading {
+  width: 6rem;
+  height: 1.6rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.skeleton_search {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 12rem;
+  padding: 0.25rem 0.6rem;
+  background-color: c.$input_bg;
+  border: 1px solid c.$column_border;
+  border-radius: 4px;
+}
+
+div.skeleton_input {
+  width: 100%;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+span.skeleton_avatar {
+  flex: 0 0 auto;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  @include m.shimmer;
+}
+
+div.skeleton_name {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 1rem;
+  border-radius: 4px;
+  @include m.shimmer;
+}
+
+div.tooltip_positioner {
+  outline: 0;
+  z-index: 10;
+}
+
+div.tooltip_popup {
+  box-sizing: border-box;
+  max-width: 24rem;
+  padding: 0.25rem 0.45rem;
+  font-size: var(--step--2);
+  color: c.$fg;
+  background-color: c.$raised_bg;
+  border: 1px solid c.$column_border;
+  border-radius: 4px;
+  transition: opacity 100ms ease-out;
+
+  &[data-starting-style],
+  &[data-ending-style] {
+    opacity: 0;
+  }
+}

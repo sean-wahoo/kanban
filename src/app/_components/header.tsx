@@ -75,7 +75,7 @@ const Header = () => {
         {!isPending && sessionData?.user ? (
           <>
             <nav className={styles.header_nav}>
-              <Link href="#projects">Projects</Link>
+              <Link href="/projects">Projects</Link>
               <span className={styles.divider} tabIndex={-1} />
               <Menu.Trigger
                 handle={newMenuHandle}
@@ -91,7 +91,7 @@ const Header = () => {
             <Dropdown
               options={[
                 { item: <Link href="#tasks">Tasks</Link> },
-                { item: <Link href="#projects">Projects</Link> },
+                { item: <Link href="/projects">Projects</Link> },
               ]}
               style={{
                 marginTop: "3.5rem",
