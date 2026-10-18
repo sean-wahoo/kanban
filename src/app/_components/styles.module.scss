@@ -45,6 +45,14 @@ header.header {
   }
 }
 
+.divider {
+  flex: 0 0 1px;
+  width: 1px;
+  height: 1.4rem;
+  align-self: center;
+  background-color: c.$border_color;
+}
+
 $col_spacing: 0.8rem;
 
 div.status_columns {

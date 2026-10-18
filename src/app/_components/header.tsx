@@ -89,6 +89,8 @@ const Header = () => {
               <MenuIcon />
             </button>
             <nav className={styles.header_nav}>
+              <Link href="#projects">Projects</Link>
+              <span className={styles.divider} tabIndex={-1} />
               <Menu.Trigger
                 handle={newMenuHandle}
                 className={styles.new_button}
