@@ -34,14 +34,6 @@ const Header = () => {
         createTaskDialogHandle.open(null);
       },
     },
-    // {
-    //   id: "create-status",
-    //   item: "Create status",
-    //   onClick: (e) => {
-    //     e.preventDefault();
-    //     // openModal("CREATE_STATUS", {});
-    //   },
-    // },
     {
       id: "create-project",
       item: "Project",
@@ -82,12 +74,6 @@ const Header = () => {
         </Link>
         {!isPending && sessionData?.user ? (
           <>
-            <button
-              data-dropdown-trigger={mobileNavTriggerId}
-              className={styles.mobile_nav_trigger}
-            >
-              <MenuIcon />
-            </button>
             <nav className={styles.header_nav}>
               <Link href="#projects">Projects</Link>
               <span className={styles.divider} tabIndex={-1} />
