@@ -51,15 +51,17 @@ const Select = ({
   defaultValue = "",
   ...props
 }: SelectProps) => {
+  const [value, setValue] = useState<SelectOption | null>(
+    options.find((o) => o.value === defaultValue) ?? null,
+  );
   return (
     <div className={styles.select}>
       <BaseSelect.Root
         modal={false}
         name={name}
         items={options}
-        defaultValue={options.findIndex((o) => o.value === defaultValue)}
-        itemToStringLabel={(o) => options[o]?.label}
-        itemToStringValue={(o) => options[o]?.value}
+        value={value}
+        onValueChange={setValue}
       >
         <div className={styles.select_preview}>
           {label ? (
@@ -93,7 +95,6 @@ const Select = ({
           {/* <Select.Backdrop /> */}
           <BaseSelect.Positioner
             alignItemWithTrigger={false}
-
             sideOffset={2}
             className={styles.select_positioner}
           >

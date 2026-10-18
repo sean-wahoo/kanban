@@ -94,9 +94,6 @@ export const CreateTaskDialog = ({ handle }: CreateTaskDialogProps) => {
             ref={createTaskFormRef}
             className={styles.form}
             errors={state.errors}
-            // onSubmit={(e: SubmitEvent) => {
-            //   e.preventDefault();
-            // }}
           >
             <Fieldset.Root className={styles.fieldset}>
               {state.formError ? (
@@ -144,56 +141,6 @@ export const CreateTaskDialog = ({ handle }: CreateTaskDialogProps) => {
                 />
                 <Field.Error className={styles.error} />
               </Field.Root>
-            </Fieldset.Root>
-            <Button disabled={taskPending} type="submit">
-              submit
-            </Button>
-          </Form>
-        </Dialog.Popup>
-      </Dialog.Portal>
-    </Dialog.Root>
-  );
-};
-
-interface EditTaskDialogProps {
-  handle: Dialog.Handle<HTMLElement>;
-  task?: Task;
-}
-export const EditTaskDialog = ({ handle, task }: EditTaskDialogProps) => {
-  const editTaskFormRef = useRef<HTMLFormElement>(null);
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-  const tasksQueryKey = trpc.tasks.getTasks.queryKey();
-  const updateTaskWithId = updateTask.bind(null, task?.id || "");
-  const [state, taskFormAction, taskPending] = useActionState(
-    updateTaskWithId,
-    { taskId: task?.id || "" },
-  );
-  const { data: projects, isLoading: isProjectsLoading } = useQuery(
-    trpc.projects.getProjects.queryOptions(),
-  );
-  const { data: statuses } = useQuery(trpc.status.getStatuses.queryOptions());
-
-  return (
-    <Dialog.Root handle={handle}>
-      <Dialog.Portal>
-        <Dialog.Backdrop className={styles.backdrop} />
-        <Dialog.Popup className={styles.popup}>
-          <Form action={taskFormAction} ref={editTaskFormRef}>
-            <Fieldset.Root className={styles.fieldset}>
-              <Fieldset.Legend className={styles.legend}>
-                edit task
-              </Fieldset.Legend>
-              <BaseField
-                name="title"
-                label="Title"
-                controlProps={{ defaultValue: task?.title }}
-              />
-              <BaseField
-                name="description"
-                label="Description"
-                controlProps={{ defaultValue: task?.description }}
-              />
             </Fieldset.Root>
             <Button disabled={taskPending} type="submit">
               submit
@@ -340,6 +287,7 @@ interface TaskDialogProps {
 const ViewTaskDetails = ({
   taskId,
   setHeight,
+  mode,
   setMode,
   ref,
 }: TaskDialogHandleProps) => {
@@ -347,10 +295,13 @@ const ViewTaskDetails = ({
   const { data: task } = useSuspenseQuery(
     trpc.tasks.getTask.queryOptions({ taskId }),
   );
+  const { data: sessionData } = authClient.useSession();
   useEffect(() => {
     const el = document.getElementById("view_task_details");
-    setHeight?.(el?.getBoundingClientRect().height || 0);
-  }, []);
+    if (mode === "view") {
+      setHeight?.(el?.getBoundingClientRect().height || 0);
+    }
+  }, [mode]);
   return (
     <div
       id="view_task_details"
@@ -361,12 +312,14 @@ const ViewTaskDetails = ({
         <Dialog.Title>{task.title}</Dialog.Title>
 
         <div className={styles.buttons}>
-          <button
-            className={styles.edit_button}
-            onClick={() => setMode?.("edit")}
-          >
-            <EditIcon size={18} />
-          </button>
+          {sessionData?.user?.id === task.userId ? (
+            <button
+              className={styles.edit_button}
+              onClick={() => setMode?.("edit")}
+            >
+              <EditIcon size={18} />
+            </button>
+          ) : null}
           <Dialog.Close className={styles.close_button}>
             <XIcon size={22} />
           </Dialog.Close>
@@ -390,6 +343,7 @@ const ViewTaskDetails = ({
 const EditTaskDetails = ({
   taskId,
   setHeight,
+  mode,
   setMode,
   ref,
 }: TaskDialogHandleProps) => {
@@ -414,7 +368,7 @@ const EditTaskDetails = ({
   );
   useEffect(() => {
     const el = document.getElementById("edit_task_details");
-    setHeight?.(el?.getBoundingClientRect().height || 0);
+
     if (!updateTaskPending) {
       queryClient.invalidateQueries({
         queryKey: taskQueryKey,
@@ -423,10 +377,13 @@ const EditTaskDetails = ({
         queryKey: tasksQueryKey,
       });
     }
-    return () => {
-      setMode?.("view");
-    };
-  }, [setMode, updateTaskPending]);
+    if (mode === "edit") {
+      setHeight?.(el?.getBoundingClientRect().height || 0);
+      return () => {
+        setMode?.("view");
+      };
+    }
+  }, [mode, setMode, updateTaskPending]);
 
   return (
     <div
@@ -482,6 +439,19 @@ const EditTaskDetails = ({
               options={statuses.map((status) => ({
                 value: status.id,
                 label: status.name,
+              }))}
+            />
+          </Field.Root>
+          <Field.Root className={styles.field}>
+            <Field.Label className={styles.label}>Project</Field.Label>
+            <Select
+              id="edit-task-project"
+              name="projectId"
+              defaultValue={task.projectId ?? ""}
+              aria-disabled={updateTaskPending}
+              options={projects.map((project) => ({
+                value: project.id,
+                label: project.title,
               }))}
             />
           </Field.Root>
